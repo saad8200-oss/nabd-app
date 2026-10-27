@@ -14,24 +14,37 @@ enum Role {
 }
 
 model Company {
+  id             String    @id @default(cuid())
+  name           String
+  email          String    @unique
+  password       String
+  phone          String?
+  address        String?
+  logo           String?
+  receiptFooter  String?   @default("شكراً لزيارتكم!")
+  expiryDate     DateTime?
+  isActive       Boolean   @default(true)
+  planId         String?
+  plan           Plan?     @relation(fields: [planId], references: [id])
+  subscriptionId String?
+  createdAt      DateTime  @default(now())
+  
+  users          User[]
+  products       Product[]
+  sales          Sale[]
+  suppliers      Supplier[]
+  categories     Category[]
+  auditLogs      AuditLog[]
+}
+
+model Plan {
   id            String    @id @default(cuid())
   name          String
-  email         String    @unique
-  password      String
-  phone         String?
-  address       String?
-  logo          String?
-  receiptFooter String?   @default("شكراً لزيارتكم!")
-  expiryDate    DateTime?
-  isActive      Boolean   @default(true)
+  price         Float
+  features      String[]
+  stripePriceId String?
+  companies     Company[]
   createdAt     DateTime  @default(now())
-  
-  users         User[]
-  products      Product[]
-  sales         Sale[]
-  suppliers     Supplier[]
-  categories    Category[] // 👈 إضافة العلاقة
-  auditLogs     AuditLog[]
 }
 
 model User {
@@ -49,7 +62,6 @@ model User {
   auditLogs AuditLog[]
 }
 
-// 👈 جدول الفئات الجديد
 model Category {
   id        String    @id @default(cuid())
   name      String
@@ -64,14 +76,14 @@ model Product {
   name              String
   imageUrl          String?
   barcode           String?   @unique
-  categoryId        String?   // 👈 ربط بالفئة
+  categoryId        String?
   category          Category? @relation(fields: [categoryId], references: [id])
   price             Float
   cost              Float
   stock             Int       @default(0)
   storeStock        Int       @default(0)
   lowStockThreshold Int       @default(10)
-  supplierId        String?   // 👈 ربط بالمورد
+  supplierId        String?
   supplier          Supplier? @relation(fields: [supplierId], references: [id])
   companyId         String?
   company           Company?  @relation(fields: [companyId], references: [id])

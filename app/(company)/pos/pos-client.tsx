@@ -7,7 +7,7 @@ import { processSale } from "./actions";
 import { saveOfflineSale } from "@/lib/offline-db";
 import { Search, ShoppingCart, Trash2, PauseCircle, PlayCircle } from "lucide-react";
 import { toast } from "sonner";
-import BarcodeScanner from "@/components/pos/barcode-scanner"; // 👈 استيراد
+import BarcodeScanner from "@/components/pos/barcode-scanner";
 
 export default function POSClient({ products }: { products: any[] }) {
   const router = useRouter();
@@ -42,7 +42,6 @@ export default function POSClient({ products }: { products: any[] }) {
     });
   };
 
-  // 👈 دالة مسح الباركود
   const handleBarcodeScan = (barcode: string) => {
     const product = products.find(p => p.barcode === barcode);
     if (product) {
@@ -221,18 +220,19 @@ export default function POSClient({ products }: { products: any[] }) {
             <span className="text-purple-600">{total} ج.م</span>
           </div>
 
+          {/* 👈 أزرار التعليق والاستعادة بألوان زاهية */}
           <div className="flex gap-2 mb-2">
             <button 
               onClick={handleHold}
               disabled={cart.length === 0}
-              className="flex-1 flex items-center justify-center gap-1 py-2 bg-amber-100/50 text-amber-600 rounded-xl hover:bg-amber-200/50 disabled:opacity-50"
+              className="btn-amber flex-1 flex items-center justify-center gap-1 py-2 disabled:opacity-50"
             >
               <PauseCircle size={16} /> تعليق
             </button>
             <button 
               onClick={handleResume}
               disabled={!heldCart}
-              className="flex-1 flex items-center justify-center gap-1 py-2 bg-green-100/50 text-green-600 rounded-xl hover:bg-green-200/50 disabled:opacity-50"
+              className="btn-emerald flex-1 flex items-center justify-center gap-1 py-2 disabled:opacity-50"
             >
               <PlayCircle size={16} /> استعادة
             </button>
@@ -241,7 +241,7 @@ export default function POSClient({ products }: { products: any[] }) {
           <button 
             onClick={handleCheckout}
             disabled={cart.length === 0 || isLoading}
-            className="glass-button w-full disabled:opacity-50"
+            className="btn-emerald w-full py-2 disabled:opacity-50"
           >
             {isLoading ? "جاري الدفع..." : "إتمام الدفع"}
           </button>
