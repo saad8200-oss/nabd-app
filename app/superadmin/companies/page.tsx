@@ -2,8 +2,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Plus, ArrowRight } from "lucide-react"; // 👈 أضفنا ArrowRight
-import CompanyActions from "./company-actions";
+import { Plus, ArrowRight } from "lucide-react";
 
 export default async function CompaniesPage() {
   const session = await auth();
@@ -18,7 +17,7 @@ export default async function CompaniesPage() {
 
   return (
     <div className="p-8">
-      {/* 👈 زر العودة */}
+      {/* زر العودة */}
       <Link href="/superadmin" className="inline-flex items-center gap-2 text-purple-600 hover:text-purple-800 mb-6 font-medium">
         <ArrowRight size={20} />
         العودة إلى لوحة التحكم
@@ -72,7 +71,12 @@ export default async function CompaniesPage() {
                   </td>
                   <td className="p-4 text-slate-600">{company._count.users}</td>
                   <td className="p-4">
-                    <CompanyActions companyId={company.id} />
+                    <Link 
+                      href={`/superadmin/companies/edit/${company.id}`} 
+                      className="text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      تعديل
+                    </Link>
                   </td>
                 </tr>
               ))
