@@ -17,11 +17,11 @@ export function Header({ companyLogo, userName, userEmail }: { companyLogo?: str
   return (
     <header className="h-16 glass-panel m-4 mt-4 rounded-3xl flex items-center justify-between px-6">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center overflow-hidden border border-purple-200">
+        <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/50 rounded-full flex items-center justify-center overflow-hidden border border-purple-200 dark:border-purple-700">
           {companyLogo ? (
             <Image src={companyLogo} alt="Logo" width={40} height={40} className="object-cover" />
           ) : (
-            <User className="w-5 h-5 text-purple-600" />
+            <User className="w-5 h-5 text-purple-600 dark:text-purple-400" />
           )}
         </div>
         <div>
@@ -31,7 +31,6 @@ export function Header({ companyLogo, userName, userEmail }: { companyLogo?: str
       </div>
 
       <div className="flex items-center gap-2">
-        {/* 👈 زر تبديل الوضع الليلي */}
         <button 
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")} 
           className="p-2 text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white transition-colors"
