@@ -55,9 +55,9 @@ export default async function DashboardPage() {
         <GlassCard>
           <div className="flex items-center justify-between mb-4">
             <span className="text-slate-500">تنبيهات المخزون</span>
-            <AlertTriangle className="text-amber-500" />
+            <AlertTriangle className="text-amber" /> {/* 👈 تم التغيير */}
           </div>
-          <p className="text-3xl font-bold text-amber-500">{lowStockItems.length}</p>
+          <p className="text-3xl font-bold text-amber">{lowStockItems.length}</p> {/* 👈 تم التغيير */}
         </GlassCard>
 
         <GlassCard>

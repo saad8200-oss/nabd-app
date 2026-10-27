@@ -156,3 +156,14 @@ body {
   box-shadow: 0 6px 20px rgba(212, 175, 55, 0.6) !important;
   transform: translateY(-2px) !important;
 }
+/* ====== لون النص البرتقالي الكهرماني (Amber) ====== */
+.text-amber {
+  color: #F59E0B !important; /* اللون البرتقالي */
+  text-shadow: 0 0 8px rgba(245, 158, 11, 0.5) !important; /* توهج برتقالي */
+}
+
+/* في الوضع الفاتح، اجعله برتقالي غامق قليلاً ليكون مقروءاً */
+:root:not(.dark) .text-amber {
+  color: #D97706 !important; /* برتقالي داكن */
+  text-shadow: none !important;
+}
