@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { DollarSign, FileText, Eye } from "lucide-react";
+import { DollarSign, FileText, Eye, TrendingUp } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-export default function ReportsClient({ sales, totalSales, totalInvoices }: { sales: any[], totalSales: number, totalInvoices: number }) {
+export default function ReportsClient({ sales, totalSales, totalInvoices, totalProfit, chartData }: any) {
   return (
     <div className="p-8">
       <div className="mb-8">
@@ -12,7 +13,7 @@ export default function ReportsClient({ sales, totalSales, totalInvoices }: { sa
       </div>
 
       {/* بطاقات الإحصائيات */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="glass-panel p-6">
           <div className="flex items-center justify-between mb-4">
             <span className="text-slate-500">إجمالي المبيعات</span>
@@ -23,10 +24,37 @@ export default function ReportsClient({ sales, totalSales, totalInvoices }: { sa
 
         <div className="glass-panel p-6">
           <div className="flex items-center justify-between mb-4">
+            <span className="text-slate-500">إجمالي الأرباح</span>
+            <TrendingUp className="text-purple-500" />
+          </div>
+          <p className="text-3xl font-bold text-purple-600">{totalProfit} ج.م</p>
+        </div>
+
+        <div className="glass-panel p-6">
+          <div className="flex items-center justify-between mb-4">
             <span className="text-slate-500">عدد الفواتير</span>
             <FileText className="text-blue-500" />
           </div>
           <p className="text-3xl font-bold text-slate-800">{totalInvoices}</p>
+        </div>
+      </div>
+
+      {/* الرسم البياني */}
+      <div className="glass-panel p-6 mb-8">
+        <h2 className="text-xl font-bold text-slate-800 mb-6">مبيعات آخر 7 أيام</h2>
+        <div className="h-80 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
+              <XAxis dataKey="date" stroke="#64748b" />
+              <YAxis stroke="#64748b" />
+              <Tooltip 
+                contentStyle={{ backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+                formatter={(value) => [`${value} ج.م`, 'المبيعات']}
+              />
+              <Bar dataKey="total" fill="#a78bfa" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
@@ -50,7 +78,7 @@ export default function ReportsClient({ sales, totalSales, totalInvoices }: { sa
                 </td>
               </tr>
             ) : (
-              sales.map((sale) => (
+              sales.map((sale: any) => (
                 <tr key={sale.id} className="border-b border-white/10 hover:bg-white/10 transition-colors">
                   <td className="p-4 font-mono text-sm text-slate-600">{sale.invoiceNumber}</td>
                   <td className="p-4 text-slate-600">{new Date(sale.createdAt).toLocaleString('ar-EG')}</td>
