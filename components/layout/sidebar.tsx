@@ -2,17 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Package, ShoppingCart, FileText, Settings, Store, Truck, Activity } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, FileText, Settings, Store, Truck, Activity, Tag } from "lucide-react"; // 👈 أضفنا Tag
 import { useSession } from "next-auth/react";
 
 const navItems = [
   { name: "لوحة التحكم", href: "/dashboard", icon: LayoutDashboard, roles: ["ADMIN", "CASHIER", "WAREHOUSE"] },
   { name: "المخازن", href: "/inventory", icon: Package, roles: ["ADMIN", "WAREHOUSE"] },
+  { name: "الفئات", href: "/categories", icon: Tag, roles: ["ADMIN", "WAREHOUSE"] }, // 👈 تمت الإضافة هنا
   { name: "المنتجات (المتجر)", href: "/products", icon: Store, roles: ["ADMIN", "WAREHOUSE"] },
   { name: "الموردين", href: "/suppliers", icon: Truck, roles: ["ADMIN", "WAREHOUSE"] },
   { name: "نقطة البيع", href: "/pos", icon: ShoppingCart, roles: ["ADMIN", "CASHIER"] },
   { name: "الفواتير والتقارير", href: "/reports", icon: FileText, roles: ["ADMIN"] },
-  { name: "سجل العمليات", href: "/audit", icon: Activity, roles: ["ADMIN"] }, // 👈 تمت الإضافة
+  { name: "سجل العمليات", href: "/audit", icon: Activity, roles: ["ADMIN"] },
   { name: "الإعدادات", href: "/settings", icon: Settings, roles: ["ADMIN"] },
 ];
 
@@ -30,6 +31,7 @@ export function Sidebar() {
 
       <nav className="flex-1 flex flex-col gap-2">
         {navItems.map((item) => {
+          // إخفاء الرابط إذا لم يكن الدور مسموحاً به
           if (!item.roles.includes(userRole)) return null;
 
           const isActive = pathname === item.href;
