@@ -15,6 +15,10 @@ export default function POSClient({ products }: { products: any[] }) {
   const [cart, setCart] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  
+  // 👈 حالات جديدة للخصم وطريقة الدفع
+  const [discount, setDiscount] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState("CASH");
 
   const filteredProducts = products.filter(p => 
     p.name.includes(searchTerm) || (p.barcode && p.barcode.includes(searchTerm))
@@ -34,7 +38,8 @@ export default function POSClient({ products }: { products: any[] }) {
     setCart(prev => prev.filter(item => item.id !== id));
   };
 
-  const total = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
+  const subtotal = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
+  const total = Math.max(0, subtotal - discount); // 👈 حساب الإجمالي بعد الخصم
 
   const handleCheckout = async () => {
     if (cart.length === 0) return;
@@ -53,9 +58,9 @@ export default function POSClient({ products }: { products: any[] }) {
         id: crypto.randomUUID(),
         items: cartItems,
         total: total,
-        subtotal: total,
-        discount: 0,
-        paymentMethod: "CASH",
+        subtotal: subtotal,
+        discount: discount,
+        paymentMethod: paymentMethod,
         companyId: (session?.user as any)?.companyId,
         userId: session?.user?.id,
         createdAt: new Date().toISOString(),
@@ -64,11 +69,12 @@ export default function POSClient({ products }: { products: any[] }) {
       await saveOfflineSale(offlineSale);
       toast.success("تم حفظ الفاتورة محلياً (وضع عدم الاتصال)");
       setCart([]);
+      setDiscount(0);
       setIsLoading(false);
       return;
     }
 
-    const result = await processSale(cartItems, total, 0, total, "CASH");
+    const result = await processSale(cartItems, total, discount, subtotal, paymentMethod);
     
     if (result?.error) {
       setError(result.error);
@@ -76,9 +82,9 @@ export default function POSClient({ products }: { products: any[] }) {
       setIsLoading(false);
     } else {
       setCart([]);
+      setDiscount(0);
       toast.success("تمت عملية البيع بنجاح!");
       setIsLoading(false);
-      // 👈 تحديث الصفحة لجلب الكميات الجديدة
       router.refresh(); 
       
       if (result?.saleId) {
@@ -149,6 +155,32 @@ export default function POSClient({ products }: { products: any[] }) {
         </div>
 
         <div className="mt-4 border-t border-white/50 pt-4">
+          {/* 👈 حقل الخصم */}
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-slate-600">الخصم:</span>
+            <input 
+              type="number" 
+              value={discount} 
+              onChange={(e) => setDiscount(Number(e.target.value))}
+              className="glass-input w-24 text-center"
+              min="0"
+            />
+          </div>
+
+          {/* 👈 قائمة طرق الدفع */}
+          <div className="flex justify-between items-center mb-4">
+            <span className="text-slate-600">طريقة الدفع:</span>
+            <select 
+              value={paymentMethod} 
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              className="glass-input w-32"
+            >
+              <option value="CASH">كاش</option>
+              <option value="CARD">فيزا</option>
+              <option value="WALLET">محفظة</option>
+            </select>
+          </div>
+
           <div className="flex justify-between text-slate-800 font-bold text-lg mb-4">
             <span>الإجمالي:</span>
             <span className="text-purple-600">{total} ج.م</span>
