@@ -38,7 +38,7 @@ export async function processSale(
       },
     });
 
-    // 2. تحديث المخزون (بدون Transaction)
+    // 2. تحديث المخزون
     for (const item of items) {
       const product = await prisma.product.findUnique({ where: { id: item.id } });
       if (!product || product.storeStock < item.quantity) {

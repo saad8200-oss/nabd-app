@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
+import { SyncManager } from "@/components/layout/sync-manager"; // 👈 استيراد
 
 export default async function CompanyLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -17,6 +18,7 @@ export default async function CompanyLayout({ children }: { children: React.Reac
     <div className="min-h-screen flex">
       <Sidebar />
       <div className="flex-1 flex flex-col">
+        <SyncManager /> {/* 👈 إضافة المزامن */}
         <Header 
           companyLogo={company?.logo} 
           userName={session.user.name || "مستخدم"} 
