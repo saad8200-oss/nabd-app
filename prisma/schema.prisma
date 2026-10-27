@@ -30,6 +30,7 @@ model Company {
   products      Product[]
   sales         Sale[]
   suppliers     Supplier[]
+  categories    Category[] // 👈 إضافة العلاقة
   auditLogs     AuditLog[]
 }
 
@@ -48,18 +49,29 @@ model User {
   auditLogs AuditLog[]
 }
 
+// 👈 جدول الفئات الجديد
+model Category {
+  id        String    @id @default(cuid())
+  name      String
+  companyId String?
+  company   Company?  @relation(fields: [companyId], references: [id])
+  products  Product[]
+  createdAt DateTime  @default(now())
+}
+
 model Product {
   id                String    @id @default(cuid())
   name              String
   imageUrl          String?
   barcode           String?   @unique
-  category          String?
+  categoryId        String?   // 👈 ربط بالفئة
+  category          Category? @relation(fields: [categoryId], references: [id])
   price             Float
   cost              Float
   stock             Int       @default(0)
   storeStock        Int       @default(0)
   lowStockThreshold Int       @default(10)
-  supplierId        String?
+  supplierId        String?   // 👈 ربط بالمورد
   supplier          Supplier? @relation(fields: [supplierId], references: [id])
   companyId         String?
   company           Company?  @relation(fields: [companyId], references: [id])

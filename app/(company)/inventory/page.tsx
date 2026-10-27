@@ -7,10 +7,15 @@ export default async function InventoryPage() {
   const session = await auth();
   if (!session?.user?.companyId) redirect("/login");
 
-  const products = await prisma.product.findMany({
-    where: { companyId: session.user.companyId },
-    orderBy: { createdAt: 'desc' }
-  });
+  const [products, categories, suppliers] = await Promise.all([
+    prisma.product.findMany({
+      where: { companyId: session.user.companyId },
+      orderBy: { createdAt: 'desc' },
+      include: { category: true, supplier: true }
+    }),
+    prisma.category.findMany({ where: { companyId: session.user.companyId } }),
+    prisma.supplier.findMany({ where: { companyId: session.user.companyId } })
+  ]);
 
-  return <InventoryClient products={products} />;
+  return <InventoryClient products={products} categories={categories} suppliers={suppliers} />;
 }

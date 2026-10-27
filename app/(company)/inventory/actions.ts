@@ -18,6 +18,8 @@ export async function saveProduct(formData: FormData) {
     const lowStockThreshold = parseInt(formData.get("lowStockThreshold") as string);
     const barcode = formData.get("barcode") as string;
     const imageUrl = formData.get("imageUrl") as string;
+    const categoryId = formData.get("categoryId") as string;
+    const supplierId = formData.get("supplierId") as string;
 
     const data = {
       name,
@@ -27,6 +29,8 @@ export async function saveProduct(formData: FormData) {
       lowStockThreshold,
       barcode: barcode && barcode.trim() !== "" ? barcode.trim() : null,
       imageUrl: imageUrl || null,
+      categoryId: categoryId || null,
+      supplierId: supplierId || null,
       companyId: session.user.companyId,
     };
 
@@ -116,4 +120,37 @@ export async function transferToStore(productId: string, quantity: number) {
   } catch (error: any) {
     return { error: error.message };
   }
+}
+
+// 👈 إضافة فئة جديدة
+export async function createCategory(formData: FormData) {
+  try {
+    const session = await auth();
+    if (!session?.user?.companyId) throw new Error("غير مصرح");
+
+    const name = formData.get("name") as string;
+    if (!name) return { error: "اسم الفئة مطلوب" };
+
+    await prisma.category.create({
+      data: { name, companyId: session.user.companyId },
+    });
+
+    revalidatePath("/inventory");
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message };
+  }
+}
+
+// 👈 جلب الفئات والموردين
+export async function getCategoriesAndSuppliers() {
+  const session = await auth();
+  if (!session?.user?.companyId) return { categories: [], suppliers: [] };
+
+  const [categories, suppliers] = await Promise.all([
+    prisma.category.findMany({ where: { companyId: session.user.companyId } }),
+    prisma.supplier.findMany({ where: { companyId: session.user.companyId } })
+  ]);
+
+  return { categories, suppliers };
 }

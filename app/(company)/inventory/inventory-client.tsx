@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { saveProduct, deleteProduct, adjustStock, transferToStore } from "./actions";
 import { Plus, Edit, Trash2, ArrowUpCircle, ArrowDownCircle, Store } from "lucide-react";
-import { toast } from "sonner"; // 👈 استيراد toast
+import { toast } from "sonner";
 
-export default function InventoryClient({ products }: { products: any[] }) {
+export default function InventoryClient({ products, categories, suppliers }: { products: any[], categories: any[], suppliers: any[] }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [error, setError] = useState("");
@@ -35,9 +35,8 @@ export default function InventoryClient({ products }: { products: any[] }) {
 
   const handleAdjustSubmit = async () => {
     const result = await adjustStock(adjustingProduct.id, adjustQty, adjustType);
-    if (result?.error) {
-      toast.error(result.error);
-    } else {
+    if (result?.error) toast.error(result.error);
+    else {
       setIsAdjustModalOpen(false);
       setAdjustingProduct(null);
       toast.success("تم تحديث الكمية بنجاح!");
@@ -98,6 +97,21 @@ export default function InventoryClient({ products }: { products: any[] }) {
               <input name="barcode" defaultValue={editingProduct?.barcode} placeholder="الباركود (اختياري)" className="glass-input" />
               <input name="imageUrl" defaultValue={editingProduct?.imageUrl} placeholder="رابط الصورة (اختياري)" className="glass-input" />
               
+              {/* قوائم الفئات والموردين */}
+              <select name="categoryId" defaultValue={editingProduct?.categoryId || ""} className="glass-input">
+                <option value="">اختر الفئة (اختياري)</option>
+                {categories.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+
+              <select name="supplierId" defaultValue={editingProduct?.supplierId || ""} className="glass-input">
+                <option value="">اختر المورد (اختياري)</option>
+                {suppliers.map(sup => (
+                  <option key={sup.id} value={sup.id}>{sup.name}</option>
+                ))}
+              </select>
+              
               <div className="flex gap-4 mt-4">
                 <button type="submit" className="glass-button flex-1">حفظ</button>
                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-4 py-2 bg-slate-200 text-slate-700 rounded-xl hover:bg-slate-300 transition-colors">إلغاء</button>
@@ -127,7 +141,8 @@ export default function InventoryClient({ products }: { products: any[] }) {
           <thead>
             <tr className="border-b border-white/30 bg-white/20">
               <th className="p-4 text-slate-700 font-semibold">المنتج</th>
-              <th className="p-4 text-slate-700 font-semibold">الباركود</th>
+              <th className="p-4 text-slate-700 font-semibold">الفئة</th>
+              <th className="p-4 text-slate-700 font-semibold">المورد</th>
               <th className="p-4 text-slate-700 font-semibold">السعر</th>
               <th className="p-4 text-slate-700 font-semibold">الكمية في المخزن</th>
               <th className="p-4 text-slate-700 font-semibold">الكمية في المتجر</th>
@@ -136,12 +151,13 @@ export default function InventoryClient({ products }: { products: any[] }) {
           </thead>
           <tbody>
             {products.length === 0 ? (
-              <tr><td colSpan={6} className="p-8 text-center text-slate-500">لا توجد منتجات. اضغط على إضافة منتج جديد.</td></tr>
+              <tr><td colSpan={7} className="p-8 text-center text-slate-500">لا توجد منتجات. اضغط على إضافة منتج جديد.</td></tr>
             ) : (
               products.map((p) => (
                 <tr key={p.id} className="border-b border-white/10 hover:bg-white/10 transition-colors">
                   <td className="p-4 font-medium text-slate-800">{p.name}</td>
-                  <td className="p-4 text-slate-600">{p.barcode || '-'}</td>
+                  <td className="p-4 text-slate-600">{p.category?.name || '-'}</td>
+                  <td className="p-4 text-slate-600">{p.supplier?.name || '-'}</td>
                   <td className="p-4 text-slate-600">{p.price} ج.م</td>
                   <td className="p-4 text-slate-600 font-bold">{p.stock}</td>
                   <td className="p-4 text-purple-600 font-bold">{p.storeStock || 0}</td>
