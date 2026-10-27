@@ -5,6 +5,9 @@ import { DollarSign, FileText, Eye, TrendingUp } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 export default function ReportsClient({ sales, totalSales, totalInvoices, totalProfit, chartData }: any) {
+  // 👈 التأكد من أن chartData صالحة
+  const safeChartData = chartData && chartData.length > 0 ? chartData : [{ date: "لا يوجد", total: 0 }];
+
   return (
     <div className="p-8">
       <div className="mb-8">
@@ -44,7 +47,7 @@ export default function ReportsClient({ sales, totalSales, totalInvoices, totalP
         <h2 className="text-xl font-bold text-slate-800 mb-6">مبيعات آخر 7 أيام</h2>
         <div className="h-80 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData}>
+            <BarChart data={safeChartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
               <XAxis dataKey="date" stroke="#64748b" />
               <YAxis stroke="#64748b" />
