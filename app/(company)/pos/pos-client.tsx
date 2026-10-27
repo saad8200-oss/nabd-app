@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { processSale } from "./actions";
 import { saveOfflineSale } from "@/lib/offline-db";
-import { Search, ShoppingCart, Trash2 } from "lucide-react";
+import { Search, ShoppingCart, Trash2, PauseCircle, PlayCircle } from "lucide-react";
 import { toast } from "sonner";
 
 export default function POSClient({ products }: { products: any[] }) {
@@ -16,9 +16,19 @@ export default function POSClient({ products }: { products: any[] }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   
-  // 👈 حالات جديدة للخصم وطريقة الدفع
   const [discount, setDiscount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState("CASH");
+
+  // 👈 حالة الفاتورة المعلقة
+  const [heldCart, setHeldCart] = useState<any[] | null>(null);
+
+  // تحميل الفاتورة المعلقة عند بدء التشغيل
+  useEffect(() => {
+    const saved = localStorage.getItem("heldCart");
+    if (saved) {
+      setHeldCart(JSON.parse(saved));
+    }
+  }, []);
 
   const filteredProducts = products.filter(p => 
     p.name.includes(searchTerm) || (p.barcode && p.barcode.includes(searchTerm))
@@ -39,7 +49,25 @@ export default function POSClient({ products }: { products: any[] }) {
   };
 
   const subtotal = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
-  const total = Math.max(0, subtotal - discount); // 👈 حساب الإجمالي بعد الخصم
+  const total = Math.max(0, subtotal - discount);
+
+  // 👈 دالة تعليق الفاتورة
+  const handleHold = () => {
+    if (cart.length === 0) return;
+    localStorage.setItem("heldCart", JSON.stringify(cart));
+    setHeldCart(cart);
+    setCart([]);
+    toast.success("تم تعليق الفاتورة");
+  };
+
+  // 👈 دالة استعادة الفاتورة
+  const handleResume = () => {
+    if (!heldCart) return;
+    setCart(heldCart);
+    localStorage.removeItem("heldCart");
+    setHeldCart(null);
+    toast.success("تم استعادة الفاتورة");
+  };
 
   const handleCheckout = async () => {
     if (cart.length === 0) return;
@@ -52,7 +80,6 @@ export default function POSClient({ products }: { products: any[] }) {
       price: item.price
     }));
 
-    // 👈 التحقق من وجود إنترنت
     if (!navigator.onLine) {
       const offlineSale = {
         id: crypto.randomUUID(),
@@ -155,7 +182,6 @@ export default function POSClient({ products }: { products: any[] }) {
         </div>
 
         <div className="mt-4 border-t border-white/50 pt-4">
-          {/* 👈 حقل الخصم */}
           <div className="flex justify-between items-center mb-2">
             <span className="text-slate-600">الخصم:</span>
             <input 
@@ -167,7 +193,6 @@ export default function POSClient({ products }: { products: any[] }) {
             />
           </div>
 
-          {/* 👈 قائمة طرق الدفع */}
           <div className="flex justify-between items-center mb-4">
             <span className="text-slate-600">طريقة الدفع:</span>
             <select 
@@ -185,6 +210,25 @@ export default function POSClient({ products }: { products: any[] }) {
             <span>الإجمالي:</span>
             <span className="text-purple-600">{total} ج.م</span>
           </div>
+
+          {/* 👈 أزرار التعليق والاستعادة */}
+          <div className="flex gap-2 mb-2">
+            <button 
+              onClick={handleHold}
+              disabled={cart.length === 0}
+              className="flex-1 flex items-center justify-center gap-1 py-2 bg-amber-100/50 text-amber-600 rounded-xl hover:bg-amber-200/50 disabled:opacity-50"
+            >
+              <PauseCircle size={16} /> تعليق
+            </button>
+            <button 
+              onClick={handleResume}
+              disabled={!heldCart}
+              className="flex-1 flex items-center justify-center gap-1 py-2 bg-green-100/50 text-green-600 rounded-xl hover:bg-green-200/50 disabled:opacity-50"
+            >
+              <PlayCircle size={16} /> استعادة
+            </button>
+          </div>
+
           <button 
             onClick={handleCheckout}
             disabled={cart.length === 0 || isLoading}
