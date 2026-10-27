@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react"; // 👈 استيراد useSession
 import { processSale } from "./actions";
-import { saveOfflineSale } from "@/lib/offline-db"; // 👈 استيراد دالة الحفظ المحلي
+import { saveOfflineSale } from "@/lib/offline-db";
 import { Search, ShoppingCart, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function POSClient({ products }: { products: any[] }) {
   const router = useRouter();
+  const { data: session } = useSession(); // 👈 الحصول على الجلسة
   const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -47,7 +49,6 @@ export default function POSClient({ products }: { products: any[] }) {
 
     // 👈 التحقق من وجود إنترنت
     if (!navigator.onLine) {
-      // حفظ الفاتورة محلياً
       const offlineSale = {
         id: crypto.randomUUID(),
         items: cartItems,
@@ -55,8 +56,8 @@ export default function POSClient({ products }: { products: any[] }) {
         subtotal: total,
         discount: 0,
         paymentMethod: "CASH",
-        companyId: "offline", // سيتم تحديثه لاحقاً
-        userId: "offline",
+        companyId: (session?.user as any)?.companyId, // 👈 استخدام companyId الحقيقي
+        userId: session?.user?.id, // 👈 استخدام userId الحقيقي
         createdAt: new Date().toISOString(),
       };
       
@@ -67,7 +68,6 @@ export default function POSClient({ products }: { products: any[] }) {
       return;
     }
 
-    // إذا كان هناك إنترنت، أرسل للسيرفر
     const result = await processSale(cartItems, total, 0, total, "CASH");
     
     if (result?.error) {
