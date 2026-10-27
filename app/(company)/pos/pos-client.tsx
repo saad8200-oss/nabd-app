@@ -21,27 +21,12 @@ export default function POSClient({ products }: { products: any[] }) {
   const [paymentMethod, setPaymentMethod] = useState("CASH");
   const [heldCart, setHeldCart] = useState<any[] | null>(null);
 
-  // 👈 حفظ المنتجات في IndexedDB عند التحميل (وأنت متصل)
+  // حفظ المنتجات في IndexedDB عند التحميل
   useEffect(() => {
     if (products && products.length > 0) {
       saveProducts(products).catch(console.error);
     }
   }, [products]);
-
-  // 👈 قراءة المنتجات من IndexedDB عند الأوفلاين
-  useEffect(() => {
-    const loadOfflineProducts = async () => {
-      if (!navigator.onLine) {
-        const offlineProducts = await getProducts();
-        if (offlineProducts.length > 0) {
-          toast.info("أنت في وضع عدم الاتصال. يتم عرض المنتجات المحفوظة.");
-          // 👈 هنا نحتاج إلى تحديث المنتجات المعروضة
-          // (في تطبيق حقيقي، يجب تمريرها إلى المكون)
-        }
-      }
-    };
-    loadOfflineProducts();
-  }, []);
 
   const filteredProducts = products.filter(p => 
     p.name.includes(searchTerm) || (p.barcode && p.barcode.includes(searchTerm))
@@ -101,10 +86,14 @@ export default function POSClient({ products }: { products: any[] }) {
       price: item.price
     }));
 
+    // 👈 معالجة الأوفلاين: حفظ وتوجيه إلى فاتورة محلية
     if (!navigator.onLine) {
       const offlineSale = {
         id: crypto.randomUUID(),
-        items: cartItems,
+        items: cartItems.map(item => {
+          const product = products.find(p => p.id === item.id);
+          return { ...item, name: product?.name || 'منتج' };
+        }),
         total: total,
         subtotal: subtotal,
         discount: discount,
@@ -115,13 +104,17 @@ export default function POSClient({ products }: { products: any[] }) {
       };
       
       await saveOfflineSale(offlineSale);
-      toast.success("تم حفظ الفاتورة محلياً (وضع عدم الاتصال)");
+      toast.success("تم حفظ الفاتورة محلياً. سيتم مزامنتها عند عودة الإنترنت.");
       setCart([]);
       setDiscount(0);
       setIsLoading(false);
+      
+      // 👈 التوجيه إلى صفحة الفاتورة المحلية
+      router.push(`/pos/offline-receipt?id=${offlineSale.id}`);
       return;
     }
 
+    // 👈 عند وجود إنترنت
     const result = await processSale(cartItems, total, discount, subtotal, paymentMethod);
     
     if (result?.error) {
