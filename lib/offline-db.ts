@@ -5,8 +5,8 @@ export interface OfflineSale {
   subtotal: number;
   discount: number;
   paymentMethod: string;
-  companyId: string;
-  userId: string;
+  companyId: string | undefined; // 👈 السماح بـ undefined
+  userId: string | undefined;    // 👈 السماح بـ undefined
   createdAt: string;
 }
 
