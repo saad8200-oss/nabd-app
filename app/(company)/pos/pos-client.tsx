@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { processSale } from "./actions";
+import { saveOfflineSale } from "@/lib/offline-db"; // 👈 استيراد دالة الحفظ المحلي
 import { Search, ShoppingCart, Trash2 } from "lucide-react";
-import { toast } from "sonner"; // 👈 استيراد toast
+import { toast } from "sonner";
 
 export default function POSClient({ products }: { products: any[] }) {
   const router = useRouter();
@@ -44,15 +45,38 @@ export default function POSClient({ products }: { products: any[] }) {
       price: item.price
     }));
 
+    // 👈 التحقق من وجود إنترنت
+    if (!navigator.onLine) {
+      // حفظ الفاتورة محلياً
+      const offlineSale = {
+        id: crypto.randomUUID(),
+        items: cartItems,
+        total: total,
+        subtotal: total,
+        discount: 0,
+        paymentMethod: "CASH",
+        companyId: "offline", // سيتم تحديثه لاحقاً
+        userId: "offline",
+        createdAt: new Date().toISOString(),
+      };
+      
+      await saveOfflineSale(offlineSale);
+      toast.success("تم حفظ الفاتورة محلياً (وضع عدم الاتصال)");
+      setCart([]);
+      setIsLoading(false);
+      return;
+    }
+
+    // إذا كان هناك إنترنت، أرسل للسيرفر
     const result = await processSale(cartItems, total, 0, total, "CASH");
     
     if (result?.error) {
       setError(result.error);
-      toast.error(result.error); // 👈 إشعار خطأ
+      toast.error(result.error);
       setIsLoading(false);
     } else {
       setCart([]);
-      toast.success("تمت عملية البيع بنجاح!"); // 👈 إشعار نجاح
+      toast.success("تمت عملية البيع بنجاح!");
       setIsLoading(false);
       if (result?.saleId) {
         router.push(`/pos/receipt/${result.saleId}`);
@@ -61,7 +85,7 @@ export default function POSClient({ products }: { products: any[] }) {
   };
 
   return (
-    <div className="flex h-[calc(100vh-100px)] gap-4 p-4">
+    <div className="flex flex-col md:flex-row h-[calc(100vh-100px)] gap-4 p-4">
       {/* قسم المنتجات */}
       <div className="flex-1 glass-panel p-4 flex flex-col">
         <div className="relative mb-4">
@@ -96,7 +120,7 @@ export default function POSClient({ products }: { products: any[] }) {
       </div>
 
       {/* قسم الفاتورة */}
-      <div className="w-80 glass-panel p-4 flex flex-col">
+      <div className="w-full md:w-80 glass-panel p-4 flex flex-col">
         <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
           <ShoppingCart size={20} /> الفاتورة
         </h2>
