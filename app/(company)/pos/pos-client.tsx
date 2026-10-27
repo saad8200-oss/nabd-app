@@ -7,6 +7,7 @@ import { processSale } from "./actions";
 import { saveOfflineSale } from "@/lib/offline-db";
 import { Search, ShoppingCart, Trash2, PauseCircle, PlayCircle } from "lucide-react";
 import { toast } from "sonner";
+import BarcodeScanner from "@/components/pos/barcode-scanner"; // 👈 استيراد
 
 export default function POSClient({ products }: { products: any[] }) {
   const router = useRouter();
@@ -18,11 +19,8 @@ export default function POSClient({ products }: { products: any[] }) {
   
   const [discount, setDiscount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState("CASH");
-
-  // 👈 حالة الفاتورة المعلقة
   const [heldCart, setHeldCart] = useState<any[] | null>(null);
 
-  // تحميل الفاتورة المعلقة عند بدء التشغيل
   useEffect(() => {
     const saved = localStorage.getItem("heldCart");
     if (saved) {
@@ -44,6 +42,17 @@ export default function POSClient({ products }: { products: any[] }) {
     });
   };
 
+  // 👈 دالة مسح الباركود
+  const handleBarcodeScan = (barcode: string) => {
+    const product = products.find(p => p.barcode === barcode);
+    if (product) {
+      addToCart(product);
+      toast.success(`تمت إضافة ${product.name}`);
+    } else {
+      toast.error("المنتج غير موجود! تأكد من الباركود.");
+    }
+  };
+
   const removeFromCart = (id: string) => {
     setCart(prev => prev.filter(item => item.id !== id));
   };
@@ -51,7 +60,6 @@ export default function POSClient({ products }: { products: any[] }) {
   const subtotal = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
   const total = Math.max(0, subtotal - discount);
 
-  // 👈 دالة تعليق الفاتورة
   const handleHold = () => {
     if (cart.length === 0) return;
     localStorage.setItem("heldCart", JSON.stringify(cart));
@@ -60,7 +68,6 @@ export default function POSClient({ products }: { products: any[] }) {
     toast.success("تم تعليق الفاتورة");
   };
 
-  // 👈 دالة استعادة الفاتورة
   const handleResume = () => {
     if (!heldCart) return;
     setCart(heldCart);
@@ -124,15 +131,18 @@ export default function POSClient({ products }: { products: any[] }) {
     <div className="flex flex-col md:flex-row h-[calc(100vh-100px)] gap-4 p-4">
       {/* قسم المنتجات */}
       <div className="flex-1 glass-panel p-4 flex flex-col">
-        <div className="relative mb-4">
-          <input 
-            type="text" 
-            placeholder="ابحث باسم المنتج أو الباركود..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="glass-input w-full pl-10"
-          />
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <div className="flex gap-2 mb-4">
+          <div className="relative flex-1">
+            <input 
+              type="text" 
+              placeholder="ابحث باسم المنتج أو الباركود..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="glass-input w-full pl-10"
+            />
+            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          </div>
+          <BarcodeScanner onScan={handleBarcodeScan} />
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-y-auto">
@@ -211,7 +221,6 @@ export default function POSClient({ products }: { products: any[] }) {
             <span className="text-purple-600">{total} ج.م</span>
           </div>
 
-          {/* 👈 أزرار التعليق والاستعادة */}
           <div className="flex gap-2 mb-2">
             <button 
               onClick={handleHold}
