@@ -167,3 +167,27 @@ body {
   color: #D97706 !important; /* برتقالي داكن */
   text-shadow: none !important;
 }
+/* ====== استثناء الفاتورة من الوضع الليلي (لتظل بيضاء للطباعة) ====== */
+.dark #receipt-print {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+/* استثناء النصوص داخل الفاتورة */
+.dark #receipt-print h1,
+.dark #receipt-print h2,
+.dark #receipt-print h3,
+.dark #receipt-print p,
+.dark #receipt-print span,
+.dark #receipt-print td,
+.dark #receipt-print th,
+.dark #receipt-print div {
+  color: #000000 !important;
+}
+
+/* استثناء الحدود */
+.dark #receipt-print .border-gray-300,
+.dark #receipt-print .border-gray-200,
+.dark #receipt-print .border-dashed {
+  border-color: #d1d5db !important;
+}
