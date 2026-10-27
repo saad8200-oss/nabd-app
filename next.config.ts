@@ -37,6 +37,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  turbopack: {}, // 👈 إضافة إعداد Turbopack فارغ لتجنب الخطأ
 };
 
 export default withPWA(nextConfig);
