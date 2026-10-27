@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react"; // 👈 استيراد useSession
+import { useSession } from "next-auth/react";
 import { processSale } from "./actions";
 import { saveOfflineSale } from "@/lib/offline-db";
 import { Search, ShoppingCart, Trash2 } from "lucide-react";
@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 export default function POSClient({ products }: { products: any[] }) {
   const router = useRouter();
-  const { data: session } = useSession(); // 👈 الحصول على الجلسة
+  const { data: session } = useSession();
   const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -56,8 +56,8 @@ export default function POSClient({ products }: { products: any[] }) {
         subtotal: total,
         discount: 0,
         paymentMethod: "CASH",
-        companyId: (session?.user as any)?.companyId, // 👈 استخدام companyId الحقيقي
-        userId: session?.user?.id, // 👈 استخدام userId الحقيقي
+        companyId: (session?.user as any)?.companyId,
+        userId: session?.user?.id,
         createdAt: new Date().toISOString(),
       };
       
@@ -78,6 +78,9 @@ export default function POSClient({ products }: { products: any[] }) {
       setCart([]);
       toast.success("تمت عملية البيع بنجاح!");
       setIsLoading(false);
+      // 👈 تحديث الصفحة لجلب الكميات الجديدة
+      router.refresh(); 
+      
       if (result?.saleId) {
         router.push(`/pos/receipt/${result.saleId}`);
       }
