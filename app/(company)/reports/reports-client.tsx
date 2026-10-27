@@ -1,12 +1,30 @@
 "use client";
 
 import Link from "next/link";
-import { DollarSign, FileText, Eye, TrendingUp } from "lucide-react";
+import { DollarSign, FileText, Eye, TrendingUp, RotateCcw } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { useState } from "react";
+import { returnSale } from "./actions";
+import { toast } from "sonner";
 
 export default function ReportsClient({ sales, totalSales, totalInvoices, totalProfit, chartData }: any) {
-  // 👈 التأكد من أن chartData صالحة
+  const [isReturning, setIsReturning] = useState<string | null>(null);
   const safeChartData = chartData && chartData.length > 0 ? chartData : [{ date: "لا يوجد", total: 0 }];
+
+  const handleReturn = async (saleId: string) => {
+    if (!confirm("هل أنت متأكد من إرجاع هذه الفاتورة؟ سيتم إعادة الكميات إلى المتجر.")) return;
+    
+    setIsReturning(saleId);
+    const result = await returnSale(saleId);
+    
+    if (result?.error) {
+      toast.error(result.error);
+    } else {
+      toast.success("تم إرجاع الفاتورة بنجاح!");
+      setTimeout(() => window.location.reload(), 1000);
+    }
+    setIsReturning(null);
+  };
 
   return (
     <div className="p-8">
@@ -15,7 +33,6 @@ export default function ReportsClient({ sales, totalSales, totalInvoices, totalP
         <p className="text-slate-500 mt-1">سجل كامل لعمليات المبيعات والأرباح</p>
       </div>
 
-      {/* بطاقات الإحصائيات */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="glass-panel p-6">
           <div className="flex items-center justify-between mb-4">
@@ -42,7 +59,6 @@ export default function ReportsClient({ sales, totalSales, totalInvoices, totalP
         </div>
       </div>
 
-      {/* الرسم البياني */}
       <div className="glass-panel p-6 mb-8">
         <h2 className="text-xl font-bold text-slate-800 mb-6">مبيعات آخر 7 أيام</h2>
         <div className="h-80 w-full">
@@ -61,7 +77,6 @@ export default function ReportsClient({ sales, totalSales, totalInvoices, totalP
         </div>
       </div>
 
-      {/* جدول الفواتير */}
       <div className="glass-panel overflow-hidden">
         <table className="w-full text-right">
           <thead>
@@ -70,7 +85,7 @@ export default function ReportsClient({ sales, totalSales, totalInvoices, totalP
               <th className="p-4 text-slate-700 font-semibold">التاريخ</th>
               <th className="p-4 text-slate-700 font-semibold">الكاشير</th>
               <th className="p-4 text-slate-700 font-semibold">الإجمالي</th>
-              <th className="p-4 text-slate-700 font-semibold">التفاصيل</th>
+              <th className="p-4 text-slate-700 font-semibold">إجراءات</th>
             </tr>
           </thead>
           <tbody>
@@ -87,13 +102,25 @@ export default function ReportsClient({ sales, totalSales, totalInvoices, totalP
                   <td className="p-4 text-slate-600">{new Date(sale.createdAt).toLocaleString('ar-EG')}</td>
                   <td className="p-4 text-slate-800">{sale.user.name || "غير معروف"}</td>
                   <td className="p-4 text-purple-600 font-bold">{sale.total} ج.م</td>
-                  <td className="p-4">
+                  <td className="p-4 flex gap-2">
                     <Link 
                       href={`/pos/receipt/${sale.id}`}
                       className="inline-flex items-center gap-1 text-purple-600 hover:text-purple-800"
                     >
                       <Eye size={16} /> عرض
                     </Link>
+                    {!sale.isReturned && (
+                      <button 
+                        onClick={() => handleReturn(sale.id)}
+                        disabled={isReturning === sale.id}
+                        className="inline-flex items-center gap-1 text-red-600 hover:text-red-800"
+                      >
+                        <RotateCcw size={16} /> إرجاع
+                      </button>
+                    )}
+                    {sale.isReturned && (
+                      <span className="text-xs text-red-500 font-bold">مرتجعة</span>
+                    )}
                   </td>
                 </tr>
               ))
