@@ -82,10 +82,10 @@ export default function InventoryClient({ products, categories, suppliers }: { p
         </button>
       </div>
 
-      {/* نافذة إضافة/تعديل منتج */}
+      {/* نافذة إضافة/تعديل منتج (تم تعديلها لتكون قابلة للتمرير) */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="glass-panel p-8 w-full max-w-lg">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="glass-panel p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold text-slate-800 mb-4">{editingProduct ? "تعديل منتج" : "إضافة منتج جديد"}</h2>
             {error && <div className="text-red-500 mb-4">{error}</div>}
             <form onSubmit={handleSave} className="flex flex-col gap-4">
@@ -97,7 +97,6 @@ export default function InventoryClient({ products, categories, suppliers }: { p
               <input name="barcode" defaultValue={editingProduct?.barcode} placeholder="الباركود (اختياري)" className="glass-input" />
               <input name="imageUrl" defaultValue={editingProduct?.imageUrl} placeholder="رابط الصورة (اختياري)" className="glass-input" />
               
-              {/* قوائم الفئات والموردين */}
               <select name="categoryId" defaultValue={editingProduct?.categoryId || ""} className="glass-input">
                 <option value="">اختر الفئة (اختياري)</option>
                 {categories.map(cat => (
@@ -121,10 +120,10 @@ export default function InventoryClient({ products, categories, suppliers }: { p
         </div>
       )}
 
-      {/* نافذة السحب والإيداع */}
+      {/* نافذة السحب والإيداع (تم تعديلها أيضاً) */}
       {isAdjustModalOpen && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="glass-panel p-8 w-full max-w-sm">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="glass-panel p-8 w-full max-w-sm max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold text-slate-800 mb-4">{adjustType === "ADD" ? "إيداع كمية" : "سحب كمية"} - {adjustingProduct?.name}</h2>
             <input type="number" value={adjustQty} onChange={(e) => setAdjustQty(parseInt(e.target.value))} min="1" className="glass-input w-full mb-4" />
             <div className="flex gap-4">
