@@ -7,7 +7,6 @@ export default async function POSPage() {
   const session = await auth();
   if (!session?.user?.companyId) redirect("/login");
 
-  // جلب المنتجات التي في المتجر فقط (storeStock > 0)
   const products = await prisma.product.findMany({
     where: { 
       companyId: session.user.companyId,

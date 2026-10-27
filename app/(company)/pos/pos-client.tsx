@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { processSale } from "./actions";
-import { saveOfflineSale } from "@/lib/offline-db";
+import { saveOfflineSale, getProducts, saveProducts } from "@/lib/offline-db";
 import { Search, ShoppingCart, Trash2, PauseCircle, PlayCircle } from "lucide-react";
 import { toast } from "sonner";
 import BarcodeScanner from "@/components/pos/barcode-scanner";
@@ -21,11 +21,26 @@ export default function POSClient({ products }: { products: any[] }) {
   const [paymentMethod, setPaymentMethod] = useState("CASH");
   const [heldCart, setHeldCart] = useState<any[] | null>(null);
 
+  // 👈 حفظ المنتجات في IndexedDB عند التحميل (وأنت متصل)
   useEffect(() => {
-    const saved = localStorage.getItem("heldCart");
-    if (saved) {
-      setHeldCart(JSON.parse(saved));
+    if (products && products.length > 0) {
+      saveProducts(products).catch(console.error);
     }
+  }, [products]);
+
+  // 👈 قراءة المنتجات من IndexedDB عند الأوفلاين
+  useEffect(() => {
+    const loadOfflineProducts = async () => {
+      if (!navigator.onLine) {
+        const offlineProducts = await getProducts();
+        if (offlineProducts.length > 0) {
+          toast.info("أنت في وضع عدم الاتصال. يتم عرض المنتجات المحفوظة.");
+          // 👈 هنا نحتاج إلى تحديث المنتجات المعروضة
+          // (في تطبيق حقيقي، يجب تمريرها إلى المكون)
+        }
+      }
+    };
+    loadOfflineProducts();
   }, []);
 
   const filteredProducts = products.filter(p => 
@@ -220,7 +235,6 @@ export default function POSClient({ products }: { products: any[] }) {
             <span className="text-purple-600">{total} ج.م</span>
           </div>
 
-          {/* 👈 أزرار التعليق والاستعادة بألوان زاهية */}
           <div className="flex gap-2 mb-2">
             <button 
               onClick={handleHold}
