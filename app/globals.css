@@ -83,3 +83,31 @@ body {
   color: #4ADE80; /* أخضر نيون */
   text-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
 }
+/* ====== إجبار النصوص على اللون الأبيض الناصع في الوضع الليلي ====== */
+.dark h1, 
+.dark h2, 
+.dark h3, 
+.dark h4, 
+.dark h5, 
+.dark h6,
+.dark p,
+.dark span,
+.dark td,
+.dark th,
+.dark label,
+.dark div:not(.glass-panel):not(.glass-button):not(.glass-input) {
+  color: #FFFFFF !important; /* أبيض ناصع */
+}
+
+/* استثناء الأزرار والعناصر التفاعلية من التغيير */
+.dark .glass-button,
+.dark .glass-button *,
+.dark .glass-input,
+.dark .glass-input * {
+  color: inherit !important;
+}
+
+/* توهج خفيف للنصوص البيضاء لإعطاء طابع نيون */
+.dark h1, .dark h2, .dark h3 {
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
