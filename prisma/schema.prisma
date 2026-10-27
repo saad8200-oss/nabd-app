@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  CASHIER
+  WAREHOUSE
+}
+
+model Company {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  password      String
+  phone         String?
+  address       String?
+  logo          String?
+  receiptFooter String?   @default("شكراً لزيارتكم!")
+  expiryDate    DateTime?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  
+  users         User[]
+  products      Product[]
+  sales         Sale[]
+  suppliers     Supplier[]
+  auditLogs     AuditLog[]
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String
+  role      Role     @default(CASHIER)
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  sales     Sale[]
+  auditLogs AuditLog[]
+}
+
+model Product {
+  id                String    @id @default(cuid())
+  name              String
+  imageUrl          String?
+  barcode           String?   @unique
+  category          String?
+  price             Float
+  cost              Float
+  stock             Int       @default(0)
+  storeStock        Int       @default(0)
+  lowStockThreshold Int       @default(10)
+  supplierId        String?
+  supplier          Supplier? @relation(fields: [supplierId], references: [id])
+  companyId         String?
+  company           Company?  @relation(fields: [companyId], references: [id])
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  saleItems         SaleItem[]
+}
+
+model Sale {
+  id            String     @id @default(cuid())
+  invoiceNumber String     @unique
+  userId        String
+  user          User       @relation(fields: [userId], references: [id])
+  subtotal      Float
+  discount      Float      @default(0)
+  total         Float
+  paymentMethod String     @default("CASH")
+  isReturned    Boolean    @default(false)
+  companyId     String?
+  company       Company?   @relation(fields: [companyId], references: [id])
+  createdAt     DateTime   @default(now())
+  items         SaleItem[]
+}
+
+model SaleItem {
+  id        String  @id @default(cuid())
+  saleId    String
+  sale      Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  unitPrice Float
+}
+
+model Supplier {
+  id        String    @id @default(cuid())
+  name      String
+  phone     String?
+  email     String?
+  companyId String?
+  company   Company?  @relation(fields: [companyId], references: [id])
+  createdAt DateTime  @default(now())
+  products  Product[]
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  entity    String?
+  entityId  String?
+  details   String?
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
+  createdAt DateTime @default(now())
+}
