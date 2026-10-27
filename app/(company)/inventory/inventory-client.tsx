@@ -76,13 +76,13 @@ export default function InventoryClient({ products, categories, suppliers }: { p
         </div>
         <button 
           onClick={() => { setEditingProduct(null); setIsModalOpen(true); }} 
-          className="glass-button flex items-center gap-2"
+          className="btn-emerald flex items-center gap-2 px-4 py-2"
         >
           <Plus size={20} /> إضافة منتج جديد
         </button>
       </div>
 
-      {/* نافذة إضافة/تعديل منتج (تم تعديلها لتكون قابلة للتمرير) */}
+      {/* نافذة إضافة/تعديل منتج */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="glass-panel p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -112,7 +112,7 @@ export default function InventoryClient({ products, categories, suppliers }: { p
               </select>
               
               <div className="flex gap-4 mt-4">
-                <button type="submit" className="glass-button flex-1">حفظ</button>
+                <button type="submit" className="btn-emerald flex-1 py-2">حفظ</button>
                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-4 py-2 bg-slate-200 text-slate-700 rounded-xl hover:bg-slate-300 transition-colors">إلغاء</button>
               </div>
             </form>
@@ -120,14 +120,14 @@ export default function InventoryClient({ products, categories, suppliers }: { p
         </div>
       )}
 
-      {/* نافذة السحب والإيداع (تم تعديلها أيضاً) */}
+      {/* نافذة السحب والإيداع */}
       {isAdjustModalOpen && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="glass-panel p-8 w-full max-w-sm max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold text-slate-800 mb-4">{adjustType === "ADD" ? "إيداع كمية" : "سحب كمية"} - {adjustingProduct?.name}</h2>
             <input type="number" value={adjustQty} onChange={(e) => setAdjustQty(parseInt(e.target.value))} min="1" className="glass-input w-full mb-4" />
             <div className="flex gap-4">
-              <button onClick={handleAdjustSubmit} className="glass-button flex-1">تأكيد</button>
+              <button onClick={handleAdjustSubmit} className="btn-emerald flex-1 py-2">تأكيد</button>
               <button onClick={() => setIsAdjustModalOpen(false)} className="flex-1 px-4 py-2 bg-slate-200 text-slate-700 rounded-xl hover:bg-slate-300 transition-colors">إلغاء</button>
             </div>
           </div>
@@ -161,11 +161,11 @@ export default function InventoryClient({ products, categories, suppliers }: { p
                   <td className="p-4 text-slate-600 font-bold">{p.stock}</td>
                   <td className="p-4 text-purple-600 font-bold">{p.storeStock || 0}</td>
                   <td className="p-4 flex gap-2 justify-end">
-                    <button onClick={() => handleTransfer(p)} title="سحب للمتجر" className="p-2 bg-purple-100/50 text-purple-600 rounded-lg hover:bg-purple-200/50"><Store size={16} /></button>
-                    <button onClick={() => { setAdjustingProduct(p); setAdjustType("ADD"); setIsAdjustModalOpen(true); }} title="إيداع" className="p-2 bg-green-100/50 text-green-600 rounded-lg hover:bg-green-200/50"><ArrowUpCircle size={16} /></button>
-                    <button onClick={() => { setAdjustingProduct(p); setAdjustType("REMOVE"); setIsAdjustModalOpen(true); }} title="سحب" className="p-2 bg-red-100/50 text-red-600 rounded-lg hover:bg-red-200/50"><ArrowDownCircle size={16} /></button>
-                    <button onClick={() => { setEditingProduct(p); setIsModalOpen(true); }} title="تعديل" className="p-2 bg-blue-100/50 text-blue-600 rounded-lg hover:bg-blue-200/50"><Edit size={16} /></button>
-                    <button onClick={() => handleDelete(p.id)} title="حذف" className="p-2 bg-red-100/50 text-red-600 rounded-lg hover:bg-red-200/50"><Trash2 size={16} /></button>
+                    <button onClick={() => handleTransfer(p)} title="سحب للمتجر" className="btn-emerald p-2"><Store size={16} /></button>
+                    <button onClick={() => { setAdjustingProduct(p); setAdjustType("ADD"); setIsAdjustModalOpen(true); }} title="إيداع" className="btn-emerald p-2"><ArrowUpCircle size={16} /></button>
+                    <button onClick={() => { setAdjustingProduct(p); setAdjustType("REMOVE"); setIsAdjustModalOpen(true); }} title="سحب" className="btn-amber p-2"><ArrowDownCircle size={16} /></button>
+                    <button onClick={() => { setEditingProduct(p); setIsModalOpen(true); }} title="تعديل" className="btn-blue p-2"><Edit size={16} /></button>
+                    <button onClick={() => handleDelete(p.id)} title="حذف" className="btn-amber p-2"><Trash2 size={16} /></button>
                   </td>
                 </tr>
               ))
