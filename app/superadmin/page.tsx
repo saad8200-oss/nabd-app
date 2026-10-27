@@ -2,8 +2,8 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Building2, Users, DollarSign, Activity } from "lucide-react";
-import LogoutButton from "./logout-button"; // 👈 استيراد الزر
+import { Building2, Users, Activity, AlertTriangle } from "lucide-react";
+import LogoutButton from "./logout-button";
 
 export default async function SuperAdminPage() {
   const session = await auth();
@@ -11,13 +11,14 @@ export default async function SuperAdminPage() {
     redirect("/login");
   }
 
+  // إحصائيات المنصة
   const companiesCount = await prisma.company.count();
+  const activeCompanies = await prisma.company.count({ where: { isActive: true } });
+  const inactiveCompanies = await prisma.company.count({ where: { isActive: false } });
   const usersCount = await prisma.user.count();
-  const totalSales = await prisma.sale.aggregate({ _sum: { total: true } });
 
   return (
     <div className="p-8">
-      {/* 👈 زر تسجيل الخروج */}
       <div className="flex justify-end mb-4">
         <LogoutButton />
       </div>
@@ -39,26 +40,26 @@ export default async function SuperAdminPage() {
 
         <div className="glass-panel p-6">
           <div className="flex items-center justify-between mb-4">
+            <span className="text-slate-500">الشركات النشطة</span>
+            <Activity className="text-green-500" />
+          </div>
+          <p className="text-3xl font-bold text-green-600">{activeCompanies}</p>
+        </div>
+
+        <div className="glass-panel p-6">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-slate-500">الشركات الموقوفة</span>
+            <AlertTriangle className="text-red-500" />
+          </div>
+          <p className="text-3xl font-bold text-red-600">{inactiveCompanies}</p>
+        </div>
+
+        <div className="glass-panel p-6">
+          <div className="flex items-center justify-between mb-4">
             <span className="text-slate-500">إجمالي المستخدمين</span>
             <Users className="text-blue-500" />
           </div>
           <p className="text-3xl font-bold text-slate-800">{usersCount}</p>
-        </div>
-
-        <div className="glass-panel p-6">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-slate-500">إجمالي المبيعات</span>
-            <DollarSign className="text-green-500" />
-          </div>
-          <p className="text-3xl font-bold text-slate-800">{totalSales._sum.total || 0} ج.م</p>
-        </div>
-
-        <div className="glass-panel p-6">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-slate-500">حالة النظام</span>
-            <Activity className="text-pink-500" />
-          </div>
-          <p className="text-3xl font-bold text-green-500">نشط</p>
         </div>
       </div>
 
