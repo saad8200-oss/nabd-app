@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 
 export default function ReceiptClient({ sale }: { sale: any }) {
+  // دالة الطباعة التلقائية
   useEffect(() => {
     const timer = setTimeout(() => {
       window.print();
@@ -11,24 +12,33 @@ export default function ReceiptClient({ sale }: { sale: any }) {
     return () => clearTimeout(timer);
   }, []);
 
+  if (!sale) {
+    return <div className="p-8 text-center text-red-500">الفاتورة غير موجودة.</div>;
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 p-8 flex flex-col items-center">
+      {/* زر العودة */}
       <div className="mb-4">
         <Link href="/pos" className="px-6 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors">
           العودة لنقطة البيع
         </Link>
       </div>
 
+      {/* الفاتورة */}
       <div id="receipt-print" className="bg-white p-8 w-full max-w-md rounded-xl shadow-lg text-black">
+        
+        {/* رأس الفاتورة */}
         <div className="text-center border-b-2 border-dashed border-gray-300 pb-4 mb-4">
-          <h1 className="text-2xl font-bold">{sale.company.name}</h1>
-          {sale.company.address && <p className="text-sm mt-1">{sale.company.address}</p>}
-          <p className="text-sm mt-1">هاتف: {sale.company.phone || 'غير مسجل'}</p>
+          <h1 className="text-2xl font-bold">{sale.company?.name || "اسم الشركة"}</h1>
+          {sale.company?.address && <p className="text-sm mt-1">{sale.company.address}</p>}
+          <p className="text-sm mt-1">هاتف: {sale.company?.phone || 'غير مسجل'}</p>
           <p className="text-sm mt-1">رقم الفاتورة: {sale.invoiceNumber}</p>
           <p className="text-sm mt-1">التاريخ: {new Date(sale.createdAt).toLocaleString('ar-EG')}</p>
-          <p className="text-sm mt-1">الكاشير: {sale.user.name}</p>
+          <p className="text-sm mt-1">الكاشير: {sale.user?.name || 'غير معروف'}</p>
         </div>
 
+        {/* جدول المنتجات */}
         <table className="w-full text-sm mb-4">
           <thead>
             <tr className="border-b border-gray-300">
@@ -38,16 +48,23 @@ export default function ReceiptClient({ sale }: { sale: any }) {
             </tr>
           </thead>
           <tbody>
-            {sale.items.map((item: any) => (
-              <tr key={item.id} className="border-b border-dashed border-gray-200">
-                <td className="py-2">{item.product.name}</td>
-                <td className="text-center py-2">{item.quantity}</td>
-                <td className="text-left py-2">{item.unitPrice * item.quantity} ج.م</td>
+            {sale.items && sale.items.length > 0 ? (
+              sale.items.map((item: any) => (
+                <tr key={item.id} className="border-b border-dashed border-gray-200">
+                  <td className="py-2">{item.product?.name || 'منتج'}</td>
+                  <td className="text-center py-2">{item.quantity}</td>
+                  <td className="text-left py-2">{item.unitPrice * item.quantity} ج.م</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={3} className="text-center py-4 text-red-500">لا توجد منتجات في هذه الفاتورة.</td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
 
+        {/* الإجمالي */}
         <div className="border-t-2 border-dashed border-gray-300 pt-4 text-sm">
           <div className="flex justify-between mb-2">
             <span>المجموع الفرعي:</span>
@@ -63,12 +80,14 @@ export default function ReceiptClient({ sale }: { sale: any }) {
           </div>
         </div>
 
+        {/* رسالة الشكر */}
         <div className="text-center mt-8 text-sm">
-          <p className="font-bold mb-1">{sale.company.receiptFooter || "شكراً لزيارتكم!"}</p>
+          <p className="font-bold mb-1">{sale.company?.receiptFooter || "شكراً لزيارتكم!"}</p>
           <p className="text-xs text-gray-500">تم الإنشاء بواسطة نظام نبض</p>
         </div>
       </div>
 
+      {/* تنسيق الطباعة */}
       <style jsx global>{`
         @media print {
           body { background-color: #fff !important; margin: 0 !important; padding: 0 !important; }
