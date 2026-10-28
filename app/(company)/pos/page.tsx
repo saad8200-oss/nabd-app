@@ -7,6 +7,7 @@ export default async function POSPage() {
   const session = await auth();
   if (!session?.user?.companyId) redirect("/login");
 
+  // 👈 جلب تاريخ انتهاء الاشتراك
   const company = await prisma.company.findUnique({
     where: { id: session.user.companyId },
     select: { expiryDate: true }
@@ -20,5 +21,6 @@ export default async function POSPage() {
     orderBy: { name: 'asc' }
   });
 
+  // 👈 تمرير expiryDate إلى العميل
   return <POSClient products={products} expiryDate={company?.expiryDate?.toISOString() || null} />;
 }
