@@ -4,12 +4,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { processSale } from "./actions";
-import { saveOfflineSale, getProducts, saveProducts } from "@/lib/offline-db";
+import { saveOfflineSale, getProducts, saveProducts, saveExpiryDate, getExpiryDate } from "@/lib/offline-db";
 import { Search, ShoppingCart, Trash2, PauseCircle, PlayCircle, X } from "lucide-react";
 import { toast } from "sonner";
 import BarcodeScanner from "@/components/pos/barcode-scanner";
 
-export default function POSClient({ products }: { products: any[] }) {
+export default function POSClient({ products, expiryDate }: { products: any[], expiryDate: string | null }) {
   const router = useRouter();
   const { data: session } = useSession();
   const [searchTerm, setSearchTerm] = useState("");
@@ -21,9 +21,15 @@ export default function POSClient({ products }: { products: any[] }) {
   const [paymentMethod, setPaymentMethod] = useState("CASH");
   const [heldCart, setHeldCart] = useState<any[] | null>(null);
 
-  // 👈 حالة الفاتورة المحلية
   const [offlineReceipt, setOfflineReceipt] = useState<any>(null);
   const [showOfflineReceipt, setShowOfflineReceipt] = useState(false);
+
+  // 👈 حفظ تاريخ الانتهاء في IndexedDB عند التحميل (وأنت متصل)
+  useEffect(() => {
+    if (expiryDate) {
+      saveExpiryDate(expiryDate).catch(console.error);
+    }
+  }, [expiryDate]);
 
   useEffect(() => {
     if (products && products.length > 0) {
@@ -80,6 +86,18 @@ export default function POSClient({ products }: { products: any[] }) {
 
   const handleCheckout = async () => {
     if (cart.length === 0) return;
+
+    // 👈 التحقق من تاريخ الانتهاء (حتى أوفلاين)
+    const storedExpiry = await getExpiryDate();
+    if (storedExpiry) {
+      const expiry = new Date(storedExpiry);
+      const now = new Date();
+      if (expiry < now) {
+        toast.error("انتهى اشتراك الشركة. يرجى التجديد للمتابعة.");
+        return;
+      }
+    }
+
     setIsLoading(true);
     setError("");
 
@@ -107,7 +125,6 @@ export default function POSClient({ products }: { products: any[] }) {
       
       await saveOfflineSale(offlineSale);
       
-      // 👈 عرض الفاتورة في نافذة منبثقة
       setOfflineReceipt(offlineSale);
       setShowOfflineReceipt(true);
       

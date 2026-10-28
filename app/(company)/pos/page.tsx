@@ -7,6 +7,11 @@ export default async function POSPage() {
   const session = await auth();
   if (!session?.user?.companyId) redirect("/login");
 
+  const company = await prisma.company.findUnique({
+    where: { id: session.user.companyId },
+    select: { expiryDate: true }
+  });
+
   const products = await prisma.product.findMany({
     where: { 
       companyId: session.user.companyId,
@@ -15,5 +20,5 @@ export default async function POSPage() {
     orderBy: { name: 'asc' }
   });
 
-  return <POSClient products={products} />;
+  return <POSClient products={products} expiryDate={company?.expiryDate?.toISOString() || null} />;
 }
