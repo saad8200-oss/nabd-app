@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { DollarSign, FileText, Eye, TrendingUp, RotateCcw } from "lucide-react";
+import { DollarSign, FileText, Eye, TrendingUp, RotateCcw, Download } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useState } from "react";
 import { returnSale } from "./actions";
 import { toast } from "sonner";
+import * as XLSX from "xlsx"; // 👈 استيراد مكتبة Excel
 
 export default function ReportsClient({ sales, totalSales, totalInvoices, totalProfit, chartData }: any) {
   const [isReturning, setIsReturning] = useState<string | null>(null);
@@ -26,11 +27,48 @@ export default function ReportsClient({ sales, totalSales, totalInvoices, totalP
     setIsReturning(null);
   };
 
+  // 👈 دالة تصدير Excel
+  const handleExportExcel = () => {
+    if (sales.length === 0) {
+      toast.error("لا توجد فواتير للتصدير.");
+      return;
+    }
+
+    // تجهيز البيانات
+    const data = sales.map((sale: any) => ({
+      "رقم الفاتورة": sale.invoiceNumber,
+      "التاريخ": new Date(sale.createdAt).toLocaleString('ar-EG'),
+      "الكاشير": sale.user.name || "غير معروف",
+      "الإجمالي": sale.total,
+      "الخصم": sale.discount,
+      "طريقة الدفع": sale.paymentMethod,
+      "الحالة": sale.isReturned ? "مرتجعة" : "نشطة",
+    }));
+
+    // إنشاء ملف Excel
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "الفواتير");
+    
+    // تحميل الملف
+    XLSX.writeFile(workbook, `تقرير_الفواتير_${new Date().toISOString().split('T')[0]}.xlsx`);
+    toast.success("تم تصدير التقرير بنجاح!");
+  };
+
   return (
     <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-800">الفواتير والتقارير</h1>
-        <p className="text-slate-500 mt-1">سجل كامل لعمليات المبيعات والأرباح</p>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-800">الفواتير والتقارير</h1>
+          <p className="text-slate-500 mt-1">سجل كامل لعمليات المبيعات والأرباح</p>
+        </div>
+        {/* 👈 زر التصدير */}
+        <button 
+          onClick={handleExportExcel}
+          className="btn-emerald flex items-center gap-2 px-4 py-2"
+        >
+          <Download size={20} /> تصدير Excel
+        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -105,17 +143,17 @@ export default function ReportsClient({ sales, totalSales, totalInvoices, totalP
                   <td className="p-4 flex gap-2">
                     <Link 
                       href={`/pos/receipt/${sale.id}`}
-                      className="inline-flex items-center gap-1 text-purple-600 hover:text-purple-800"
+                      className="btn-blue p-2 rounded-lg"
                     >
-                      <Eye size={16} /> عرض
+                      <Eye size={16} />
                     </Link>
                     {!sale.isReturned && (
                       <button 
                         onClick={() => handleReturn(sale.id)}
                         disabled={isReturning === sale.id}
-                        className="inline-flex items-center gap-1 text-red-600 hover:text-red-800"
+                        className="btn-amber p-2 rounded-lg"
                       >
-                        <RotateCcw size={16} /> إرجاع
+                        <RotateCcw size={16} />
                       </button>
                     )}
                     {sale.isReturned && (
