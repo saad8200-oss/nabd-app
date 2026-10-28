@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Plus, ArrowRight } from "lucide-react";
+import ImpersonateButton from "./impersonate-button"; // 👈 استيراد زر الانتحال
 
 export default async function CompaniesPage() {
   const session = await auth();
@@ -30,7 +31,7 @@ export default async function CompaniesPage() {
         </div>
         <Link 
           href="/superadmin/companies/new" 
-          className="glass-button flex items-center gap-2"
+          className="btn-emerald flex items-center gap-2 px-4 py-2"
         >
           <Plus size={20} />
           إضافة شركة جديدة
@@ -70,10 +71,14 @@ export default async function CompaniesPage() {
                     </span>
                   </td>
                   <td className="p-4 text-slate-600">{company._count.users}</td>
-                  <td className="p-4">
+                  <td className="p-4 flex gap-2">
+                    {/* 👈 زر الدخول إلى الشركة */}
+                    <ImpersonateButton companyId={company.id} />
+                    
+                    {/* زر التعديل */}
                     <Link 
                       href={`/superadmin/companies/edit/${company.id}`} 
-                      className="text-blue-600 hover:text-blue-800 font-medium"
+                      className="text-blue-600 hover:text-blue-800 font-medium p-2"
                     >
                       تعديل
                     </Link>
