@@ -3,26 +3,27 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import QRCode from "qrcode";
-import Image from "next/image"; // 👈 لاستخدام الصور
 
 export default function ReceiptClient({ sale }: { sale: any }) {
   const [qrUrl, setQrUrl] = useState<string>("");
 
-  // 👈 توليد رمز QR للدفع
   useEffect(() => {
-    const generateQR = async () => {
-      try {
-        const paymentUrl = `${window.location.origin}/pay/${sale.id}`;
-        const url = await QRCode.toDataURL(paymentUrl, { width: 120, margin: 1 });
-        setQrUrl(url);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    generateQR();
-  }, [sale.id]);
+    // توليد رمز QR للدفع
+    if (sale?.id) {
+      const generateQR = async () => {
+        try {
+          const paymentUrl = `${window.location.origin}/pay/${sale.id}`;
+          const url = await QRCode.toDataURL(paymentUrl, { width: 120, margin: 1 });
+          setQrUrl(url);
+        } catch (err) {
+          console.error(err);
+        }
+      };
+      generateQR();
+    }
+  }, [sale]);
 
-  // 👈 الطباعة التلقائية
+  // الطباعة التلقائية
   useEffect(() => {
     const timer = setTimeout(() => {
       window.print();
@@ -34,18 +35,16 @@ export default function ReceiptClient({ sale }: { sale: any }) {
 
   return (
     <div className="min-h-screen bg-slate-100 p-8 flex flex-col items-center">
-      {/* زر العودة (لا يظهر في الطباعة) */}
       <div className="mb-6 print:hidden">
-        <Link href="/pos" className="px-6 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors">
+        <Link href="/pos" className="px-6 py-2 bg-slate-800 text-white rounded-lg">
           العودة لنقطة البيع
         </Link>
       </div>
 
-      {/* الفاتورة (تظهر في الطباعة) */}
-      <div id="receipt-print" className="bg-white p-8 w-full max-w-md rounded-xl shadow-2xl text-black relative overflow-hidden">
+      <div id="receipt-print" className="bg-white p-8 w-full max-w-md rounded-xl shadow-2xl text-black relative">
         
-        {/* 👈 شعار الشركة (إذا وجد) */}
-        {sale.company.logo && (
+        {/* شعار الشركة (إذا وجد) */}
+        {sale.company?.logo && (
           <div className="flex justify-center mb-4">
             <img src={sale.company.logo} alt="Logo" className="w-16 h-16 object-contain" />
           </div>
@@ -53,9 +52,11 @@ export default function ReceiptClient({ sale }: { sale: any }) {
 
         {/* رأس الفاتورة */}
         <div className="text-center border-b-2 border-dashed border-gray-300 pb-4 mb-4">
-          <h1 className="text-2xl font-extrabold text-gray-800">{sale.company.name}</h1>
-          {sale.company.address && <p className="text-xs text-gray-600 mt-1">{sale.company.address}</p>}
-          <p className="text-xs text-gray-600">هاتف: {sale.company.phone || 'غير مسجل'}</p>
+          <h1 className="text-2xl font-extrabold text-gray-800">
+            {sale.company?.name || "اسم الشركة"}
+          </h1>
+          {sale.company?.address && <p className="text-xs text-gray-600 mt-1">{sale.company.address}</p>}
+          <p className="text-xs text-gray-600">هاتف: {sale.company?.phone || 'غير مسجل'}</p>
           <div className="flex justify-between mt-2 text-xs text-gray-600">
             <span>رقم الفاتورة: {sale.invoiceNumber}</span>
             <span>التاريخ: {new Date(sale.createdAt).toLocaleString('ar-EG')}</span>
@@ -72,13 +73,19 @@ export default function ReceiptClient({ sale }: { sale: any }) {
             </tr>
           </thead>
           <tbody>
-            {sale.items.map((item: any) => (
-              <tr key={item.id} className="border-b border-dashed border-gray-200">
-                <td className="py-2 font-medium">{item.product.name}</td>
-                <td className="text-center py-2">{item.quantity}</td>
-                <td className="text-left py-2">{item.unitPrice * item.quantity} ج.م</td>
+            {sale.items && sale.items.length > 0 ? (
+              sale.items.map((item: any) => (
+                <tr key={item.id} className="border-b border-dashed border-gray-200">
+                  <td className="py-2 font-medium">{item.product?.name || 'منتج'}</td>
+                  <td className="text-center py-2">{item.quantity}</td>
+                  <td className="text-left py-2">{item.unitPrice * item.quantity} ج.م</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={3} className="text-center py-4 text-red-500">لا توجد منتجات في هذه الفاتورة.</td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
 
@@ -98,7 +105,7 @@ export default function ReceiptClient({ sale }: { sale: any }) {
           </div>
         </div>
 
-        {/* 👈 QR Code للدفع */}
+        {/* QR Code للدفع */}
         {qrUrl && (
           <div className="text-center mt-6 border-t border-dashed border-gray-300 pt-4">
             <p className="text-xs font-bold text-gray-600 mb-2">امسح للدفع</p>
@@ -108,7 +115,7 @@ export default function ReceiptClient({ sale }: { sale: any }) {
 
         {/* رسالة الشكر */}
         <div className="text-center mt-6">
-          <p className="font-bold text-gray-800">{sale.company.receiptFooter || "شكراً لزيارتكم!"}</p>
+          <p className="font-bold text-gray-800">{sale.company?.receiptFooter || "شكراً لزيارتكم!"}</p>
           <p className="text-xs text-gray-400 mt-1">تم الإنشاء بواسطة نظام نبض</p>
         </div>
       </div>
@@ -122,7 +129,7 @@ export default function ReceiptClient({ sale }: { sale: any }) {
             box-shadow: none !important; 
             border-radius: 0 !important; 
             max-width: 100% !important;
-            width: 80mm !important; /* عرض ورق الطباعة الحراري */
+            width: 80mm !important;
             margin: 0 auto !important;
             padding: 10px !important;
           }
