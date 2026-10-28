@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 import { auth } from "@/auth";
 import { logAction } from "@/lib/audit";
 
-// 1. إضافة شركة جديدة (إذا كانت موجودة)
+// 1. إضافة شركة جديدة
 export async function createCompany(formData: FormData) {
   try {
     const session = await auth();
@@ -72,19 +72,11 @@ export async function updateCompany(id: string, formData: FormData) {
       },
     });
 
-    // إذا تم إدخال كلمة مرور جديدة، قم بتحديثها لمدير الشركة
     if (newPassword && newPassword.trim() !== "") {
       const hashedPassword = await bcrypt.hash(newPassword, 10);
-      
-      const companyAdmin = await prisma.user.findFirst({
-        where: { companyId: id, role: "ADMIN" },
-      });
-
+      const companyAdmin = await prisma.user.findFirst({ where: { companyId: id, role: "ADMIN" } });
       if (companyAdmin) {
-        await prisma.user.update({
-          where: { id: companyAdmin.id },
-          data: { password: hashedPassword },
-        });
+        await prisma.user.update({ where: { id: companyAdmin.id }, data: { password: hashedPassword } });
       }
     }
 
@@ -114,6 +106,44 @@ export async function deleteCompany(id: string) {
     });
 
     revalidatePath("/superadmin/companies");
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message };
+  }
+}
+
+// 👈 4. الانتحال (الدخول إلى الشركة)
+export async function impersonateCompany(companyId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user || session.user.role !== "SUPER_ADMIN") {
+      throw new Error("غير مصرح");
+    }
+
+    const companyAdmin = await prisma.user.findFirst({
+      where: { companyId, role: "ADMIN" },
+    });
+
+    if (!companyAdmin) return { error: "لا يوجد مدير لهذه الشركة" };
+
+    await prisma.user.update({
+      where: { id: companyAdmin.id },
+      data: { isImpersonating: true, impersonatedBy: session.user.email },
+    });
+
+    return { success: true, email: companyAdmin.email, password: "123456" };
+  } catch (error: any) {
+    return { error: error.message };
+  }
+}
+
+// 5. إعادة تعيين حالة الانتحال
+export async function stopImpersonation(userId: string) {
+  try {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { isImpersonating: false, impersonatedBy: null },
+    });
     return { success: true };
   } catch (error: any) {
     return { error: error.message };
