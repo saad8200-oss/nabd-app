@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Building2, Users, Activity, AlertTriangle, TrendingUp } from "lucide-react";
 import LogoutButton from "./logout-button";
+import SuperAdminChart from "./superadmin-chart"; // 👈 استيراد مكون الرسم البياني
 
 export default async function SuperAdminPage() {
   const session = await auth();
@@ -11,13 +12,13 @@ export default async function SuperAdminPage() {
     redirect("/login");
   }
 
-  // 👈 إحصائيات المنصة
+  // إحصائيات المنصة
   const companiesCount = await prisma.company.count();
   const activeCompanies = await prisma.company.count({ where: { isActive: true } });
   const inactiveCompanies = await prisma.company.count({ where: { isActive: false } });
   const usersCount = await prisma.user.count();
 
-  // 👈 الشركات التي ستنتهي اشتراكاتها قريباً (خلال 30 يوماً)
+  // الشركات التي ستنتهي اشتراكاتها قريباً
   const thirtyDaysFromNow = new Date();
   thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
 
@@ -29,8 +30,35 @@ export default async function SuperAdminPage() {
       },
     },
     orderBy: { expiryDate: 'asc' },
-    take: 5, // أول 5 شركات
+    take: 5,
   });
+
+  // 👈 تجهيز بيانات الرسم البياني (الشركات الجديدة آخر 6 أشهر)
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+  const recentCompanies = await prisma.company.findMany({
+    where: {
+      createdAt: {
+        gte: sixMonthsAgo,
+      },
+    },
+    select: { createdAt: true },
+  });
+
+  // تجميع البيانات حسب الشهر
+  const monthNames = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+  const monthlyData: Record<string, number> = {};
+
+  recentCompanies.forEach(company => {
+    const month = monthNames[new Date(company.createdAt).getMonth()];
+    monthlyData[month] = (monthlyData[month] || 0) + 1;
+  });
+
+  const chartData = Object.keys(monthlyData).map(month => ({
+    name: month,
+    companies: monthlyData[month],
+  }));
 
   return (
     <div className="p-8">
@@ -78,10 +106,20 @@ export default async function SuperAdminPage() {
         </div>
       </div>
 
-      {/* 👈 قائمة الاشتراكات التي ستنتهي قريباً */}
+      {/* 👈 الرسم البياني لنمو الشركات */}
+      <div className="glass-panel p-6 mb-8">
+        <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+          <TrendingUp className="text-purple-500" /> نمو الشركات (آخر 6 أشهر)
+        </h2>
+        <div className="h-80 w-full">
+          <SuperAdminChart data={chartData} />
+        </div>
+      </div>
+
+      {/* قائمة الاشتراكات التي ستنتهي قريباً */}
       <div className="glass-panel p-6 mb-8">
         <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-          <TrendingUp className="text-amber-500" /> اشتراكات تنتهي قريباً (خلال 30 يوماً)
+          <AlertTriangle className="text-amber-500" /> اشتراكات تنتهي قريباً (خلال 30 يوماً)
         </h2>
         {expiringCompanies.length === 0 ? (
           <p className="text-slate-500 text-center py-4">لا توجد اشتراكات تنتهي قريباً.</p>
