@@ -18,7 +18,8 @@ export default function EditCompanyForm({ company }: { company: any }) {
     const formData = new FormData(e.currentTarget);
     const result = await updateCompany(company.id, formData);
 
-    if (result?.error) {
+    // 👈 التحقق من وجود خطأ
+    if (result && 'error' in result && result.error) {
       setError(result.error);
       setIsLoading(false);
     } else {
@@ -52,7 +53,7 @@ export default function EditCompanyForm({ company }: { company: any }) {
             <input name="isActive" type="checkbox" defaultChecked={company.isActive} id="isActive" className="w-5 h-5" />
             <label htmlFor="isActive" className="text-slate-600">الشركة نشطة</label>
           </div>
-          <button type="submit" disabled={isLoading} className="glass-button w-full mt-4">
+          <button type="submit" disabled={isLoading} className="btn-emerald w-full mt-4 py-2">
             {isLoading ? "جاري الحفظ..." : "حفظ التعديلات"}
           </button>
         </form>

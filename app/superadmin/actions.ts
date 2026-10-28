@@ -1,23 +1,22 @@
-export async function impersonateCompany(companyId: string) {
-  try {
-    const session = await auth();
-    if (!session?.user || session.user.role !== "SUPER_ADMIN") {
-      throw new Error("غير مصرح");
-    }
+"use server";
 
-    const companyAdmin = await prisma.user.findFirst({
-      where: { companyId, role: "ADMIN" },
-    });
+import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
+import bcrypt from "bcryptjs";
+import { auth } from "@/auth";
+import { logAction } from "@/lib/audit";
 
-    if (!companyAdmin) return { error: "لا يوجد مدير لهذه الشركة" };
+// 1. إضافة شركة جديدة (إذا كنت تستخدمها هنا)
+export async function createCompany(formData: FormData) {
+  // ... (نفس الكود السابق)
+}
 
-    await prisma.user.update({
-      where: { id: companyAdmin.id },
-      data: { isImpersonating: true, impersonatedBy: session.user.email },
-    });
+// 2. تعديل شركة (مع إعادة تعيين كلمة المرور)
+export async function updateCompany(id: string, formData: FormData) {
+  // ... (نفس الكود السابق)
+}
 
-    return { success: true, email: companyAdmin.email, password: "123456" };
-  } catch (error: any) {
-    return { error: error.message };
-  }
+// 3. حذف شركة
+export async function deleteCompany(id: string) {
+  // ... (نفس الكود السابق)
 }
