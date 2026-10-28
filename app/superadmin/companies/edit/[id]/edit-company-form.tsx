@@ -16,15 +16,15 @@ export default function EditCompanyForm({ company }: { company: any }) {
     setError("");
 
     const formData = new FormData(e.currentTarget);
-    const result = await updateCompany(company.id, formData);
-
-    // 👈 التحقق من وجود خطأ
-    if (result && 'error' in result && result.error) {
-      setError(result.error);
-      setIsLoading(false);
-    } else {
+    
+    try {
+      await updateCompany(company.id, formData);
+      // 👈 بافتراض أن الدالة لا ترجع خطأ، نعتبرها نجحت
       router.push("/superadmin/companies");
       router.refresh();
+    } catch (err: any) {
+      setError(err.message || "حدث خطأ غير متوقع");
+      setIsLoading(false);
     }
   };
 
