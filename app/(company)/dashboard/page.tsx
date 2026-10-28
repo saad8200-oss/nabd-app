@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { GlassCard } from "@/components/ui/glass-card";
 import { DollarSign, Package, AlertTriangle, TrendingUp } from "lucide-react";
+import Link from "next/link"; // 👈 استيراد Link
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -52,13 +53,16 @@ export default async function DashboardPage() {
           <p className="text-3xl font-bold text-slate-800">{productsCount}</p>
         </GlassCard>
 
-        <GlassCard>
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-slate-500">تنبيهات المخزون</span>
-            <AlertTriangle className="text-amber" /> {/* 👈 تم التغيير */}
-          </div>
-          <p className="text-3xl font-bold text-amber">{lowStockItems.length}</p> {/* 👈 تم التغيير */}
-        </GlassCard>
+        {/* 👈 بطاقة تنبيهات المخزون (أصبحت قابلة للنقر) */}
+        <Link href="/inventory?filter=low-stock" className="block">
+          <GlassCard className="cursor-pointer hover:bg-white/40 transition-all">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-slate-500">تنبيهات المخزون</span>
+              <AlertTriangle className="text-amber" />
+            </div>
+            <p className="text-3xl font-bold text-amber">{lowStockItems.length}</p>
+          </GlassCard>
+        </Link>
 
         <GlassCard>
           <div className="flex items-center justify-between mb-4">
