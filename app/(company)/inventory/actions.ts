@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { logAction } from "@/lib/audit";
-import { createClient } from "@supabase/supabase-js"; // 👈 استيراد Supabase
+import { createClient } from "@supabase/supabase-js";
 
 // إعداد Supabase Client (لرفع الصور)
 const supabase = createClient(
@@ -12,6 +12,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+// 1. حفظ المنتج (إضافة أو تعديل)
 export async function saveProduct(formData: FormData) {
   try {
     const session = await auth();
@@ -27,7 +28,7 @@ export async function saveProduct(formData: FormData) {
     const categoryId = formData.get("categoryId") as string;
     const supplierId = formData.get("supplierId") as string;
 
-    // 👈 رفع الصورة (إذا تم اختيارها)
+    // رفع الصورة (إذا تم اختيارها)
     const imageFile = formData.get("image") as File | null;
     let imageUrl: string | null = null;
 
@@ -48,7 +49,6 @@ export async function saveProduct(formData: FormData) {
       imageUrl = publicUrl;
     }
 
-    // 👈 تجهيز البيانات
     const data = {
       name,
       price,
@@ -56,7 +56,7 @@ export async function saveProduct(formData: FormData) {
       stock,
       lowStockThreshold,
       barcode: barcode && barcode.trim() !== "" ? barcode.trim() : null,
-      imageUrl: imageUrl || (id ? undefined : null), // إذا لم يتم رفع صورة، احتفظ بالقديمة
+      imageUrl: imageUrl || (id ? undefined : null), // إذا لم يتم رفع صورة جديدة، احتفظ بالقديمة
       categoryId: categoryId || null,
       supplierId: supplierId || null,
       companyId: session.user.companyId,
@@ -78,16 +78,89 @@ export async function saveProduct(formData: FormData) {
   }
 }
 
-// ... (باقي الدوال: deleteProduct، adjustStock، transferToStore)
+// 2. حذف المنتج
+export async function deleteProduct(id: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.companyId) throw new Error("غير مصرح");
+    
+    await prisma.product.delete({ where: { id, companyId: session.user.companyId } });
+    await logAction("DELETE", "Product", id, `تم حذف منتج`);
+    
+    revalidatePath("/inventory");
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message };
+  }
+}
 
-// 👈 دالة استيراد المنتجات من Excel
+// 3. تعديل كمية المخزون (سحب/إيداع)
+export async function adjustStock(productId: string, quantity: number, type: "ADD" | "REMOVE") {
+  try {
+    const session = await auth();
+    if (!session?.user?.companyId) throw new Error("غير مصرح");
+
+    const product = await prisma.product.findUnique({ where: { id: productId } });
+    if (!product) return { error: "المنتج غير موجود" };
+
+    const newStock = type === "ADD" ? product.stock + quantity : product.stock - quantity;
+    if (newStock < 0) return { error: "الكمية غير كافية" };
+
+    await prisma.product.update({
+      where: { id: productId },
+      data: { stock: newStock },
+    });
+
+    await logAction(
+      type === "ADD" ? "STOCK_IN" : "STOCK_OUT",
+      "Product",
+      productId,
+      `${type === "ADD" ? "إيداع" : "سحب"} ${quantity} من ${product.name}`
+    );
+
+    revalidatePath("/inventory");
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message };
+  }
+}
+
+// 4. سحب من المخزن إلى المتجر
+export async function transferToStore(productId: string, quantity: number) {
+  try {
+    const session = await auth();
+    if (!session?.user?.companyId) throw new Error("غير مصرح");
+
+    const product = await prisma.product.findUnique({ where: { id: productId } });
+    if (!product) return { error: "المنتج غير موجود" };
+    if (product.stock < quantity) return { error: "الكمية غير كافية في المخزن" };
+
+    await prisma.product.update({
+      where: { id: productId },
+      data: {
+        stock: { decrement: quantity },
+        storeStock: { increment: quantity },
+      },
+    });
+
+    await logAction("TRANSFER", "Product", productId, `تم سحب ${quantity} من ${product.name} إلى المتجر`);
+
+    revalidatePath("/inventory");
+    revalidatePath("/products");
+    revalidatePath("/pos");
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message };
+  }
+}
+
+// 5. استيراد المنتجات من Excel
 export async function importProducts(data: any[]) {
   try {
     const session = await auth();
     if (!session?.user?.companyId) throw new Error("غير مصرح");
 
     for (const item of data) {
-      // البحث عن الفئة والمورد (إذا كانا موجودين)
       const category = item["الفئة"] ? await prisma.category.findFirst({ 
         where: { name: item["الفئة"], companyId: session.user.companyId } 
       }) : null;
