@@ -35,6 +35,7 @@ model Company {
   suppliers      Supplier[]
   categories     Category[]
   auditLogs      AuditLog[]
+  onlineOrders   OnlineOrder[] // 👈 إضافة العلاقة
 }
 
 model Plan {
@@ -141,4 +142,28 @@ model AuditLog {
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id])
   createdAt DateTime @default(now())
+}
+
+// 👈 جدول طلبات الإنترنت (Click & Collect)
+model OnlineOrder {
+  id            String            @id @default(cuid())
+  customerName  String
+  customerPhone String
+  pickupBranch  String
+  total         Float
+  status        String            @default("PENDING")
+  companyId     String?
+  company       Company?          @relation(fields: [companyId], references: [id])
+  items         OnlineOrderItem[]
+  createdAt     DateTime          @default(now())
+}
+
+model OnlineOrderItem {
+  id          String      @id @default(cuid())
+  orderId     String
+  order       OnlineOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  productName String
+  quantity    Int
+  unitPrice   Float
 }

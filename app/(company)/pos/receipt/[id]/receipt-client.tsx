@@ -1,10 +1,26 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import QRCode from "qrcode"; // 👈 استيراد مكتبة QR
 
 export default function ReceiptClient({ sale }: { sale: any }) {
-  // دالة الطباعة التلقائية
+  const [qrUrl, setQrUrl] = useState<string>("");
+
+  useEffect(() => {
+    const generateQR = async () => {
+      try {
+        // 👈 رابط الدفع (يمكن استبداله برابط بوابة الدفع الحقيقية لاحقاً)
+        const paymentUrl = `${window.location.origin}/pay/${sale.id}`;
+        const url = await QRCode.toDataURL(paymentUrl, { width: 150 });
+        setQrUrl(url);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    generateQR();
+  }, [sale.id]);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       window.print();
@@ -12,23 +28,17 @@ export default function ReceiptClient({ sale }: { sale: any }) {
     return () => clearTimeout(timer);
   }, []);
 
-  if (!sale) {
-    return <div className="p-8 text-center text-red-500">الفاتورة غير موجودة.</div>;
-  }
+  if (!sale) return <div className="p-8 text-center text-red-500">الفاتورة غير موجودة.</div>;
 
   return (
     <div className="min-h-screen bg-slate-50 p-8 flex flex-col items-center">
-      {/* زر العودة */}
       <div className="mb-4">
         <Link href="/pos" className="px-6 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors">
           العودة لنقطة البيع
         </Link>
       </div>
 
-      {/* الفاتورة */}
       <div id="receipt-print" className="bg-white p-8 w-full max-w-md rounded-xl shadow-lg text-black">
-        
-        {/* رأس الفاتورة */}
         <div className="text-center border-b-2 border-dashed border-gray-300 pb-4 mb-4">
           <h1 className="text-2xl font-bold">{sale.company?.name || "اسم الشركة"}</h1>
           {sale.company?.address && <p className="text-sm mt-1">{sale.company.address}</p>}
@@ -38,7 +48,6 @@ export default function ReceiptClient({ sale }: { sale: any }) {
           <p className="text-sm mt-1">الكاشير: {sale.user?.name || 'غير معروف'}</p>
         </div>
 
-        {/* جدول المنتجات */}
         <table className="w-full text-sm mb-4">
           <thead>
             <tr className="border-b border-gray-300">
@@ -64,7 +73,6 @@ export default function ReceiptClient({ sale }: { sale: any }) {
           </tbody>
         </table>
 
-        {/* الإجمالي */}
         <div className="border-t-2 border-dashed border-gray-300 pt-4 text-sm">
           <div className="flex justify-between mb-2">
             <span>المجموع الفرعي:</span>
@@ -80,14 +88,20 @@ export default function ReceiptClient({ sale }: { sale: any }) {
           </div>
         </div>
 
-        {/* رسالة الشكر */}
+        {/* 👈 QR Code للدفع */}
+        {qrUrl && (
+          <div className="text-center mt-6 border-t border-dashed border-gray-300 pt-4">
+            <p className="font-bold mb-2 text-sm">امسح للدفع</p>
+            <img src={qrUrl} alt="QR Code" className="mx-auto w-32 h-32" />
+          </div>
+        )}
+
         <div className="text-center mt-8 text-sm">
           <p className="font-bold mb-1">{sale.company?.receiptFooter || "شكراً لزيارتكم!"}</p>
           <p className="text-xs text-gray-500">تم الإنشاء بواسطة نظام نبض</p>
         </div>
       </div>
 
-      {/* تنسيق الطباعة */}
       <style jsx global>{`
         @media print {
           body { background-color: #fff !important; margin: 0 !important; padding: 0 !important; }
