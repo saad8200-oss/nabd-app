@@ -61,7 +61,7 @@ export async function saveProduct(formData: FormData) {
       cost,
       stock,
       lowStockThreshold,
-      barcode: finalBarcode, // 👈 استخدام finalBarcode
+      barcode: finalBarcode,
       imageUrl: imageUrl || (id ? undefined : null),
       categoryId: categoryId || null,
       supplierId: supplierId || null,
@@ -84,16 +84,34 @@ export async function saveProduct(formData: FormData) {
   }
 }
 
-// 2. حذف المنتج
+// 2. أرشفة المنتج (تعطيله) بدلاً من حذفه نهائياً
 export async function deleteProduct(id: string) {
   try {
     const session = await auth();
     if (!session?.user?.companyId) throw new Error("غير مصرح");
-    
-    await prisma.product.delete({ where: { id, companyId: session.user.companyId } });
-    await logAction("DELETE", "Product", id, `تم حذف منتج`);
+
+    const product = await prisma.product.findUnique({
+      where: { id, companyId: session.user.companyId }
+    });
+
+    if (!product) return { error: "المنتج غير موجود" };
+
+    // 👈 منع الحذف إذا كان المنتج لا يزال في المتجر
+    if (product.storeStock > 0) {
+      return { error: "لا يمكن حذف منتج لا يزال في المتجر. قم بسحبه أولاً." };
+    }
+
+    // 👈 تعطيل المنتج بدلاً من حذفه
+    await prisma.product.update({
+      where: { id },
+      data: { isActive: false },
+    });
+
+    await logAction("DELETE", "Product", id, `تم أرشفة المنتج: ${product.name}`);
     
     revalidatePath("/inventory");
+    revalidatePath("/products");
+    revalidatePath("/pos");
     return { success: true };
   } catch (error: any) {
     return { error: error.message };

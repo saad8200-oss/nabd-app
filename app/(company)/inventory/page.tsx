@@ -9,7 +9,10 @@ export default async function InventoryPage() {
 
   const [products, categories, suppliers] = await Promise.all([
     prisma.product.findMany({
-      where: { companyId: session.user.companyId },
+      where: { 
+        companyId: session.user.companyId,
+        isActive: true // 👈 هذا السطر يمنع ظهور المنتجات المؤرشفة
+      },
       orderBy: { createdAt: 'desc' },
       include: { category: true, supplier: true }
     }),
