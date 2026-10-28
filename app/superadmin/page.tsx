@@ -2,7 +2,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Building2, Users, Activity, AlertTriangle } from "lucide-react";
+import { Building2, Users, Activity, AlertTriangle, TrendingUp } from "lucide-react";
 import LogoutButton from "./logout-button";
 
 export default async function SuperAdminPage() {
@@ -11,11 +11,26 @@ export default async function SuperAdminPage() {
     redirect("/login");
   }
 
-  // إحصائيات المنصة
+  // 👈 إحصائيات المنصة
   const companiesCount = await prisma.company.count();
   const activeCompanies = await prisma.company.count({ where: { isActive: true } });
   const inactiveCompanies = await prisma.company.count({ where: { isActive: false } });
   const usersCount = await prisma.user.count();
+
+  // 👈 الشركات التي ستنتهي اشتراكاتها قريباً (خلال 30 يوماً)
+  const thirtyDaysFromNow = new Date();
+  thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+
+  const expiringCompanies = await prisma.company.findMany({
+    where: {
+      expiryDate: {
+        lte: thirtyDaysFromNow,
+        gte: new Date(),
+      },
+    },
+    orderBy: { expiryDate: 'asc' },
+    take: 5, // أول 5 شركات
+  });
 
   return (
     <div className="p-8">
@@ -61,6 +76,41 @@ export default async function SuperAdminPage() {
           </div>
           <p className="text-3xl font-bold text-slate-800">{usersCount}</p>
         </div>
+      </div>
+
+      {/* 👈 قائمة الاشتراكات التي ستنتهي قريباً */}
+      <div className="glass-panel p-6 mb-8">
+        <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <TrendingUp className="text-amber-500" /> اشتراكات تنتهي قريباً (خلال 30 يوماً)
+        </h2>
+        {expiringCompanies.length === 0 ? (
+          <p className="text-slate-500 text-center py-4">لا توجد اشتراكات تنتهي قريباً.</p>
+        ) : (
+          <table className="w-full text-right">
+            <thead>
+              <tr className="border-b border-white/30 bg-white/20">
+                <th className="p-3 text-slate-700 font-semibold">اسم الشركة</th>
+                <th className="p-3 text-slate-700 font-semibold">تاريخ الانتهاء</th>
+                <th className="p-3 text-slate-700 font-semibold">الحالة</th>
+              </tr>
+            </thead>
+            <tbody>
+              {expiringCompanies.map((company) => (
+                <tr key={company.id} className="border-b border-white/10">
+                  <td className="p-3 text-slate-800">{company.name}</td>
+                  <td className="p-3 text-red-600 font-bold">
+                    {company.expiryDate ? new Date(company.expiryDate).toLocaleDateString('ar-EG') : 'غير محدد'}
+                  </td>
+                  <td className="p-3">
+                    <span className={`px-2 py-1 rounded-full text-xs ${company.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                      {company.isActive ? 'نشطة' : 'موقوفة'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* روابط سريعة */}
